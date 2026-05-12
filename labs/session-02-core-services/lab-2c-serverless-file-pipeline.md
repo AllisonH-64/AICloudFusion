@@ -1,30 +1,33 @@
-# Lab 2C: Build a Serverless File Processing Pipeline
+# Lab 2C: Build a Serverless File Processing App with a Web Frontend
 
 **Session:** 2 — Core AWS Services  
 **Track:** Cloud Basics  
 **Difficulty:** Advanced  
-**Estimated Time:** 40–50 minutes
+**Estimated Time:** 50–60 minutes
 
 ---
 
 ## Overview
 
-In this lab, you will build an **automated file processing pipeline** using AWS Lambda and S3. When you upload a text file to an input bucket, a Lambda function will automatically trigger, process the file (convert it to uppercase and count the words), and save the result to an output bucket.
+In this lab, you will build a **complete serverless application** — a web page where you can upload text, have it automatically processed by AWS Lambda, and see the result displayed on the page. This ties together everything from Sessions 1 and 2: S3 static website hosting, Lambda functions, IAM roles, S3 event triggers, and presigned URLs.
 
 **What you will build:**
-- An **input S3 bucket** — where you upload files
-- An **output S3 bucket** — where processed results appear
-- A **Lambda function** — serverless code that runs automatically when a file is uploaded
-- An **S3 event trigger** — connects the bucket to the Lambda so it fires on every upload
+- A **static website** hosted on S3 (like Lab 1C) with a file upload form
+- A **presign Lambda function** that generates secure upload URLs for the browser
+- A **Lambda Function URL** so the web page can call the presign function
+- An **input S3 bucket** where uploaded files land
+- A **processing Lambda function** that triggers automatically on upload, converts text to uppercase, and counts words
+- An **output S3 bucket** where processed results are stored and publicly readable
+- The web page **displays the processed result** and provides a download link
 
-This is a real-world pattern used in production systems: image resizing pipelines, log processing, data transformation, document conversion, and more. You will walk away with a working automated system that processes files without any servers to manage.
+This is a real-world architecture pattern — serverless web applications that process user uploads without any servers running 24/7.
 
 ---
 
 ## Prerequisites
 
 - ✅ Completed **Lab 1A** (AWS account, CLI configured)
-- ✅ Familiarity with S3 (from Labs 1C and 2B)
+- ✅ Familiarity with S3 static website hosting (Lab 1C)
 - ✅ AWS CLI authenticated
 - ✅ A text editor for creating files
 
@@ -34,10 +37,10 @@ This is a real-world pattern used in production systems: image resizing pipeline
 
 | Service | What It Is | Free Tier Limit |
 |---------|-----------|----------------|
-| AWS Lambda | Serverless compute (runs code without servers) | 1 million requests/month + 400,000 GB-seconds Always Free |
-| Amazon S3 | Cloud storage | 5 GB storage free for 12 months |
+| AWS Lambda | Serverless compute | 1 million requests/month Always Free |
+| Amazon S3 | Cloud storage + website hosting | 5 GB storage free for 12 months |
+| Lambda Function URLs | Public HTTP endpoint for Lambda | Included with Lambda free tier |
 | IAM | Access management | Always Free |
-| CloudWatch Logs | Lambda execution logs | 5 GB ingestion/month Always Free |
 
 **Estimated cost for this lab: $0.00**
 
@@ -45,13 +48,11 @@ This is a real-world pattern used in production systems: image resizing pipeline
 
 ## Concepts
 
-**AWS Lambda** is a serverless compute service. You write code, upload it to Lambda, and AWS runs it for you — no servers to manage, no operating systems to patch, no scaling to configure. You only pay for the time your code actually runs (and the first 1 million requests per month are free).
+**Lambda Function URL** is a simple way to give your Lambda function a public HTTP endpoint (a URL that anyone can call). Instead of setting up API Gateway (which is more complex), you create a Function URL and the browser can call it directly. We use this so the web page can ask Lambda for a presigned upload URL.
 
-**Event-driven architecture** means your code runs in response to events. In this lab, the event is "a file was uploaded to S3." Lambda listens for that event and automatically runs your code. You don't need to poll, check, or schedule anything — it just happens.
+**Presigned URL** is a temporary URL that grants permission to upload a file to S3. Normally, S3 buckets are private. A presigned URL says "anyone with this link can upload one file, but only for the next 5 minutes." This is how the web page uploads files without needing AWS credentials in the browser.
 
-**S3 Event Notifications** is the feature that connects S3 to Lambda. You configure a bucket to send a notification whenever a file is created, and Lambda receives that notification and runs your function.
-
-**Why this matters for jobs:** Serverless and event-driven architectures are increasingly common. Companies use Lambda for everything from processing uploads to running APIs to automating workflows. Understanding how to wire services together (S3 → Lambda → S3) is a core cloud engineering skill.
+**CORS (Cross-Origin Resource Sharing)** is a browser security feature. When your web page (hosted on one domain) tries to call a Lambda URL or fetch from S3 (different domains), the browser blocks it unless those services explicitly allow it. We configure CORS on our buckets and Lambda to permit these cross-origin requests.
 
 ---
 
@@ -61,8 +62,10 @@ This is a real-world pattern used in production systems: image resizing pipeline
 |-------------|------------------------|---------|
 | `<YOUR_PROFILE_NAME>` | Your AWS CLI profile name | `AdministratorAccess-123456789012` |
 | `<YOUR_ACCOUNT_ID>` | Your 12-digit AWS account number | `123456789012` |
-| `<INPUT_BUCKET>` | A unique name for your input bucket | `jane-doe-workshop-input` |
-| `<OUTPUT_BUCKET>` | A unique name for your output bucket | `jane-doe-workshop-output` |
+| `<INPUT_BUCKET>` | Unique name for input bucket | `jane-doe-pipeline-input` |
+| `<OUTPUT_BUCKET>` | Unique name for output bucket | `jane-doe-pipeline-output` |
+| `<WEBSITE_BUCKET>` | Unique name for website bucket | `jane-doe-pipeline-website` |
+| `<FUNCTION_URL>` | The Lambda Function URL (you'll get this in Step 8) | `https://abc123.lambda-url.us-east-1.on.aws/` |
 
 ---
 
@@ -84,33 +87,25 @@ export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 
 ---
 
-### Step 2: Create the Input and Output S3 Buckets
+### Step 2: Create Three S3 Buckets
+
+You need three buckets: one for the website, one for file uploads (input), and one for processed results (output).
 
 📋 Copy and paste, **replacing the bucket names** with your own unique names:
 
 ```
 aws s3 mb s3://<INPUT_BUCKET> --region us-east-1
-```
-
-```
 aws s3 mb s3://<OUTPUT_BUCKET> --region us-east-1
+aws s3 mb s3://<WEBSITE_BUCKET> --region us-east-1
 ```
-
-**✅ You should see** `make_bucket:` for each.
-
-> **📝 Write down your bucket names:**
-> - Input bucket: ______________________________
-> - Output bucket: ______________________________
 
 ---
 
-### Step 3: Create the Lambda Execution Role
+### Step 3: Create the Lambda IAM Role
 
-Lambda needs an IAM role that gives it permission to read from the input bucket, write to the output bucket, and write logs to CloudWatch.
+Both Lambda functions need a role with S3 access and logging permissions.
 
-**Create the trust policy file** (`lambda-trust-policy.json`):
-
-📋 Copy and paste into a new file and save:
+**Create `lambda-trust-policy.json`:**
 
 ```json
 {
@@ -127,35 +122,29 @@ Lambda needs an IAM role that gives it permission to read from the input bucket,
 }
 ```
 
-> **What does this do?** Tells AWS that Lambda functions are allowed to use this role.
-
-**Create the role and attach policies.** 📋 Copy and paste:
+📋 Run these commands:
 
 ```
-aws iam create-role --role-name workshop-lambda-s3-role --assume-role-policy-document file://lambda-trust-policy.json
+aws iam create-role --role-name workshop-pipeline-role --assume-role-policy-document file://lambda-trust-policy.json
 ```
 
 ```
-aws iam attach-role-policy --role-name workshop-lambda-s3-role --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+aws iam attach-role-policy --role-name workshop-pipeline-role --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 ```
 
 ```
-aws iam attach-role-policy --role-name workshop-lambda-s3-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+aws iam attach-role-policy --role-name workshop-pipeline-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 ```
-
-> **What do these policies do?**
-> - `AmazonS3FullAccess` — lets the Lambda read from and write to S3 buckets
-> - `AWSLambdaBasicExecutionRole` — lets the Lambda write logs to CloudWatch (so you can see what happened)
 
 **Wait 10 seconds** for IAM to propagate.
 
 ---
 
-### Step 4: Write the Lambda Function Code
+### Step 4: Create the Presign Lambda Function
 
-Create a file called `lambda_function.py` with the following code:
+This function generates a temporary upload URL that the web page uses to upload files directly to S3.
 
-📋 Copy and paste this entire block into a new file and save it as `lambda_function.py`:
+**Create `presign_function.py`:**
 
 ```python
 import json
@@ -165,31 +154,100 @@ import os
 s3_client = boto3.client('s3')
 
 def lambda_handler(event, context):
-    # Get the bucket and file name from the S3 event
+    params = event.get('queryStringParameters', {}) or {}
+    filename = params.get('filename', 'upload.txt')
+    
+    input_bucket = os.environ['INPUT_BUCKET']
+    
+    presigned_url = s3_client.generate_presigned_url(
+        'put_object',
+        Params={
+            'Bucket': input_bucket,
+            'Key': filename,
+            'ContentType': 'text/plain'
+        },
+        ExpiresIn=300
+    )
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'uploadUrl': presigned_url, 'filename': filename})
+    }
+```
+
+> **What does this do?** When the web page calls this function with a filename, it generates a presigned URL that allows uploading that file to the input bucket. The URL expires after 5 minutes.
+
+> **Important:** Do NOT add CORS headers in the code — the Function URL configuration handles CORS automatically. Adding them in both places causes a "duplicate header" error.
+
+**Zip and deploy:**
+
+**macOS / Linux:**
+
+```bash
+zip presign.zip presign_function.py
+```
+
+**Windows (PowerShell):**
+
+```powershell
+Compress-Archive -Path presign_function.py -DestinationPath presign.zip -Force
+```
+
+📋 Deploy, **replacing `<YOUR_ACCOUNT_ID>` and `<INPUT_BUCKET>`**:
+
+**Windows (PowerShell):**
+
+```powershell
+aws lambda create-function --function-name workshop-presign --runtime python3.12 --role "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/workshop-pipeline-role" --handler presign_function.lambda_handler --zip-file fileb://presign.zip --environment "Variables={INPUT_BUCKET=<INPUT_BUCKET>}" --region us-east-1
+```
+
+**macOS / Linux:**
+
+```bash
+aws lambda create-function \
+    --function-name workshop-presign \
+    --runtime python3.12 \
+    --role "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/workshop-pipeline-role" \
+    --handler presign_function.lambda_handler \
+    --zip-file fileb://presign.zip \
+    --environment "Variables={INPUT_BUCKET=<INPUT_BUCKET>}" \
+    --region us-east-1
+```
+
+---
+
+### Step 5: Create the Processing Lambda Function
+
+This function triggers when a file is uploaded to the input bucket, processes it, and saves the result to the output bucket.
+
+**Create `process_function.py`:**
+
+```python
+import json
+import boto3
+import os
+
+s3_client = boto3.client('s3')
+
+def lambda_handler(event, context):
     source_bucket = event['Records'][0]['s3']['bucket']['name']
     source_key = event['Records'][0]['s3']['object']['key']
     
-    # Only process .txt files
     if not source_key.endswith('.txt'):
-        print(f"Skipping non-txt file: {source_key}")
         return {'statusCode': 200, 'body': 'Skipped'}
     
-    # Download the file from the input bucket
     response = s3_client.get_object(Bucket=source_bucket, Key=source_key)
     original_text = response['Body'].read().decode('utf-8')
     
-    # Process the file: convert to uppercase and count words
     processed_text = original_text.upper()
     word_count = len(original_text.split())
     
-    # Build the output content
     output_content = f"=== PROCESSED FILE ===\n"
     output_content += f"Original file: {source_key}\n"
     output_content += f"Word count: {word_count}\n"
     output_content += f"=== CONTENT (UPPERCASE) ===\n"
     output_content += processed_text
     
-    # Upload the processed file to the output bucket
     output_bucket = os.environ['OUTPUT_BUCKET']
     output_key = f"processed-{source_key}"
     
@@ -200,104 +258,80 @@ def lambda_handler(event, context):
         ContentType='text/plain'
     )
     
-    print(f"Processed {source_key} -> {output_key}")
-    
-    return {
-        'statusCode': 200,
-        'body': json.dumps(f'Processed {source_key} successfully')
-    }
+    return {'statusCode': 200, 'body': json.dumps(f'Processed {source_key}')}
 ```
 
-> **What does this code do? (line by line)**
->
-> 1. When a file is uploaded to the input bucket, S3 sends an "event" to Lambda with the bucket name and file name
-> 2. The function downloads the file from S3
-> 3. It converts all the text to UPPERCASE and counts the words
-> 4. It creates a new file with the processed content plus a header showing the word count
-> 5. It uploads the processed file to the output bucket with `processed-` added to the filename
->
-> **You don't need to know Python to complete this lab** — just copy the code exactly as shown.
-
----
-
-### Step 5: Package and Deploy the Lambda Function
-
-Lambda functions need to be uploaded as a `.zip` file.
+**Zip and deploy:**
 
 **macOS / Linux:**
 
 ```bash
-zip lambda.zip lambda_function.py
+zip process.zip process_function.py
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-Compress-Archive -Path lambda_function.py -DestinationPath lambda.zip -Force
+Compress-Archive -Path process_function.py -DestinationPath process.zip -Force
 ```
 
-**Now deploy the function.** 📋 Copy and paste, **replacing `<YOUR_ACCOUNT_ID>` and `<OUTPUT_BUCKET>`**:
+📋 Deploy, **replacing `<YOUR_ACCOUNT_ID>` and `<OUTPUT_BUCKET>`**:
 
 **Windows (PowerShell):**
 
 ```powershell
-aws lambda create-function --function-name workshop-file-processor --runtime python3.12 --role "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/workshop-lambda-s3-role" --handler lambda_function.lambda_handler --zip-file fileb://lambda.zip --environment "Variables={OUTPUT_BUCKET=<OUTPUT_BUCKET>}" --region us-east-1
+aws lambda create-function --function-name workshop-processor --runtime python3.12 --role "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/workshop-pipeline-role" --handler process_function.lambda_handler --zip-file fileb://process.zip --environment "Variables={OUTPUT_BUCKET=<OUTPUT_BUCKET>}" --region us-east-1
 ```
-
-**macOS / Linux:**
-
-```bash
-aws lambda create-function \
-    --function-name workshop-file-processor \
-    --runtime python3.12 \
-    --role "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/workshop-lambda-s3-role" \
-    --handler lambda_function.lambda_handler \
-    --zip-file fileb://lambda.zip \
-    --environment "Variables={OUTPUT_BUCKET=<OUTPUT_BUCKET>}" \
-    --region us-east-1
-```
-
-> **What does this do?**
-> - `--function-name` — names the function so you can find it later
-> - `--runtime python3.12` — tells Lambda to use Python 3.12 to run the code
-> - `--role` — which IAM role the function uses for permissions
-> - `--handler lambda_function.lambda_handler` — which file and function to call (file: `lambda_function.py`, function: `lambda_handler`)
-> - `--zip-file fileb://lambda.zip` — the code package to upload (`fileb://` means "binary file")
-> - `--environment` — passes the output bucket name to the function as a configuration variable
-
-**✅ You should see** a JSON response with the function details including `"State": "Active"`.
-
-**✅ Checkpoint — In the AWS Console:**
-1. Search for **Lambda** → click it
-2. You should see **workshop-file-processor** in the functions list
 
 ---
 
-### Step 6: Grant S3 Permission to Invoke the Lambda
+### Step 6: Create a Function URL for the Presign Lambda
 
-S3 needs explicit permission to trigger your Lambda function.
+This gives the presign function a public URL that the web page can call.
 
-📋 Copy and paste, **replacing `<INPUT_BUCKET>`**:
+📋 Copy and paste:
 
 ```
-aws lambda add-permission --function-name workshop-file-processor --statement-id s3-trigger --action lambda:InvokeFunction --principal s3.amazonaws.com --source-arn arn:aws:s3:::<INPUT_BUCKET> --region us-east-1
+aws lambda create-function-url-config --function-name workshop-presign --auth-type NONE --cors "AllowOrigins=*,AllowMethods=GET,AllowHeaders=*" --region us-east-1
 ```
 
-> **What does this do?** Tells Lambda "allow S3 to invoke this function, but only from this specific bucket."
+> **What does `--auth-type NONE` mean?** It makes the URL publicly accessible without authentication. This is fine for our use case — the presign function only generates upload URLs, it doesn't expose any sensitive data.
+
+> **What does `--cors` do?** It tells the browser "yes, web pages from other domains are allowed to call this URL." Without this, the browser would block the request.
+
+**✅ You should see** a JSON response with a `FunctionUrl` field. **Copy this URL.**
+
+> **📝 Write down your Function URL:** ______________________________
+>
+> It looks like: `https://abc123xyz.lambda-url.us-east-1.on.aws/`
+
+**Grant public access:**
+
+```
+aws lambda add-permission --function-name workshop-presign --statement-id FunctionURLAllowPublicAccess --action lambda:InvokeFunctionUrl --principal "*" --function-url-auth-type NONE --region us-east-1
+```
+
+> **⏳ Wait 1–2 minutes** for the permission to propagate before testing.
 
 ---
 
-### Step 7: Configure S3 to Trigger Lambda on File Upload
+### Step 7: Configure the S3 Event Trigger
 
-Create a file called `s3-notification.json` that tells S3 to notify Lambda when a `.txt` file is uploaded.
+Connect the input bucket to the processing Lambda so it fires automatically on upload.
 
-📋 Copy and paste into a new file, **replacing `<YOUR_ACCOUNT_ID>`**, and save:
+**Grant S3 permission to invoke the Lambda.** 📋 Replace `<INPUT_BUCKET>`:
+
+```
+aws lambda add-permission --function-name workshop-processor --statement-id s3-trigger --action lambda:InvokeFunction --principal s3.amazonaws.com --source-arn arn:aws:s3:::<INPUT_BUCKET> --region us-east-1
+```
+
+**Create `s3-notification.json`.** 📋 Replace `<YOUR_ACCOUNT_ID>`:
 
 ```json
 {
     "LambdaFunctionConfigurations": [
         {
-            "LambdaFunctionArn": "arn:aws:lambda:us-east-1:<YOUR_ACCOUNT_ID>:function:workshop-file-processor",
+            "LambdaFunctionArn": "arn:aws:lambda:us-east-1:<YOUR_ACCOUNT_ID>:function:workshop-processor",
             "Events": ["s3:ObjectCreated:*"],
             "Filter": {
                 "Key": {
@@ -314,110 +348,288 @@ Create a file called `s3-notification.json` that tells S3 to notify Lambda when 
 }
 ```
 
-> **What does this do?**
-> - `Events: s3:ObjectCreated:*` — trigger on any new file upload
-> - `Filter: suffix .txt` — only trigger for files ending in `.txt`
-
-**Apply the notification configuration.** 📋 Copy and paste, **replacing `<INPUT_BUCKET>`**:
+📋 Apply it, **replacing `<INPUT_BUCKET>`**:
 
 ```
 aws s3api put-bucket-notification-configuration --bucket <INPUT_BUCKET> --notification-configuration file://s3-notification.json --region us-east-1
 ```
 
-**✅ No output means success.** Your pipeline is now wired up!
+---
+
+### Step 8: Configure CORS on the S3 Buckets
+
+The browser needs permission to upload to the input bucket and read from the output bucket.
+
+**Create `cors.json`:**
+
+```json
+{
+    "CORSRules": [
+        {
+            "AllowedHeaders": ["*"],
+            "AllowedMethods": ["PUT", "GET"],
+            "AllowedOrigins": ["*"],
+            "ExposeHeaders": []
+        }
+    ]
+}
+```
+
+📋 Apply to both buckets, **replacing the bucket names**:
+
+```
+aws s3api put-bucket-cors --bucket <INPUT_BUCKET> --cors-configuration file://cors.json --region us-east-1
+```
+
+```
+aws s3api put-bucket-cors --bucket <OUTPUT_BUCKET> --cors-configuration file://cors.json --region us-east-1
+```
 
 ---
 
-### Step 8: Test the Pipeline!
+### Step 9: Make the Output Bucket Publicly Readable
 
-Create a test file and upload it to the input bucket. The Lambda should automatically process it and put the result in the output bucket.
+So the web page can fetch and display the processed results.
 
-📋 Create a file called `my-test-file.txt` with some text:
-
-```
-echo "Cloud computing is transforming how businesses operate. AWS provides over 200 services that help companies build, deploy, and scale applications in the cloud. In this workshop, we are learning the fundamentals." > my-test-file.txt
-```
-
-> **Windows PowerShell:**
-> ```powershell
-> "Cloud computing is transforming how businesses operate. AWS provides over 200 services that help companies build, deploy, and scale applications in the cloud. In this workshop, we are learning the fundamentals." | Out-File -Encoding utf8 my-test-file.txt
-> ```
-
-**Upload it to the input bucket.** 📋 Copy and paste, **replacing `<INPUT_BUCKET>`**:
+📋 Replace `<OUTPUT_BUCKET>`:
 
 ```
-aws s3 cp my-test-file.txt s3://<INPUT_BUCKET>/my-test-file.txt
+aws s3api put-public-access-block --bucket <OUTPUT_BUCKET> --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 ```
 
-**Wait 5–10 seconds** for Lambda to process the file.
+**Create `output-policy.json`.** 📋 Replace `<OUTPUT_BUCKET>`:
 
-**Check the output bucket.** 📋 Copy and paste, **replacing `<OUTPUT_BUCKET>`**:
-
-```
-aws s3 ls s3://<OUTPUT_BUCKET>/
-```
-
-**✅ You should see:** `processed-my-test-file.txt`
-
-**Download and view the processed file.** 📋 Copy and paste, **replacing `<OUTPUT_BUCKET>`**:
-
-```
-aws s3 cp s3://<OUTPUT_BUCKET>/processed-my-test-file.txt -
-```
-
-> (The `-` at the end means "print to the terminal instead of saving to a file")
-
-**✅ You should see something like:**
-
-```
-=== PROCESSED FILE ===
-Original file: my-test-file.txt
-Word count: 35
-=== CONTENT (UPPERCASE) ===
-CLOUD COMPUTING IS TRANSFORMING HOW BUSINESSES OPERATE. AWS PROVIDES OVER 200 SERVICES THAT HELP COMPANIES BUILD, DEPLOY, AND SCALE APPLICATIONS IN THE CLOUD. IN THIS WORKSHOP, WE ARE LEARNING THE FUNDAMENTALS.
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::<OUTPUT_BUCKET>/*"
+        }
+    ]
+}
 ```
 
-> **🎉 Your pipeline works!** You uploaded a file, Lambda automatically processed it, and the result appeared in the output bucket — all without you doing anything. This is event-driven, serverless computing in action.
+📋 Apply it:
+
+```
+aws s3api put-bucket-policy --bucket <OUTPUT_BUCKET> --policy file://output-policy.json
+```
 
 ---
 
-### Step 9: Test with Another File
+### Step 10: Create and Deploy the Website
 
-Try uploading a different file to confirm the pipeline handles multiple files:
+**Set up the website bucket** (same as Lab 1C):
 
-```
-echo "This is a second test file to prove the pipeline works repeatedly." > second-test.txt
-```
+📋 Replace `<WEBSITE_BUCKET>`:
 
 ```
-aws s3 cp second-test.txt s3://<INPUT_BUCKET>/second-test.txt
+aws s3 website s3://<WEBSITE_BUCKET> --index-document index.html --error-document index.html
 ```
 
-Wait 5–10 seconds, then check:
-
 ```
-aws s3 ls s3://<OUTPUT_BUCKET>/
+aws s3api put-public-access-block --bucket <WEBSITE_BUCKET> --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 ```
 
-**✅ You should see both** `processed-my-test-file.txt` and `processed-second-test.txt`.
+**Create `website-policy.json`.** 📋 Replace `<WEBSITE_BUCKET>`:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::<WEBSITE_BUCKET>/*"
+        }
+    ]
+}
+```
+
+```
+aws s3api put-bucket-policy --bucket <WEBSITE_BUCKET> --policy file://website-policy.json
+```
+
+**Create `index.html`.** 📋 Copy this entire file, **replacing `<FUNCTION_URL>` and `<OUTPUT_BUCKET>`** with your actual values:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud File Processor</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; padding: 20px; background: #f0f4f8; }
+        h1 { color: #232f3e; }
+        .card { background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 20px 0; }
+        textarea { width: 100%; height: 150px; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; resize: vertical; }
+        button { background: #ff9900; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #ec7211; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { margin-top: 15px; padding: 12px; border-radius: 6px; display: none; }
+        .status.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.loading { display: block; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .result { margin-top: 15px; padding: 15px; background: #1a1a2e; color: #00ff88; border-radius: 6px; white-space: pre-wrap; font-family: monospace; font-size: 14px; }
+        .badge { background: #232f3e; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+        a.download-link { display: inline-block; margin-top: 10px; background: #232f3e; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; }
+        a.download-link:hover { background: #37475a; }
+    </style>
+</head>
+<body>
+    <h1>&#9729; Cloud File Processor</h1>
+    <p>Upload a text file and watch it get processed automatically by AWS Lambda.</p>
+    <p><span class="badge">Serverless</span> <span class="badge">S3</span> <span class="badge">Lambda</span></p>
+
+    <div class="card">
+        <h2>Upload a Text File</h2>
+        <p>Type or paste some text below, then click Upload. The serverless pipeline will process it automatically.</p>
+        <textarea id="fileContent" placeholder="Type your text here..."></textarea>
+        <br>
+        <label for="fileName">File name: </label>
+        <input type="text" id="fileName" value="my-upload.txt" style="padding: 8px; border: 2px solid #ddd; border-radius: 4px;">
+        <br>
+        <button id="uploadBtn" onclick="uploadFile()">Upload & Process</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <div id="resultSection" class="card" style="display:none;">
+        <h2>&#9989; Processed Result</h2>
+        <p>Lambda processed your file. Here is the output:</p>
+        <div id="result" class="result"></div>
+        <a id="downloadLink" class="download-link" href="#" target="_blank">&#128229; View Processed File</a>
+    </div>
+
+    <div class="card">
+        <h2>How It Works</h2>
+        <ol>
+            <li>You type text and click Upload</li>
+            <li>The web page asks Lambda for a <strong>presigned URL</strong> (a temporary upload link)</li>
+            <li>The file is uploaded directly to the <strong>S3 input bucket</strong></li>
+            <li>S3 automatically triggers a <strong>Lambda function</strong></li>
+            <li>Lambda processes the file (converts to uppercase, counts words)</li>
+            <li>The result is saved to the <strong>S3 output bucket</strong></li>
+            <li>The processed file is displayed above and available for viewing</li>
+        </ol>
+        <p><strong>All of this happens without any servers running 24/7.</strong> Lambda only runs when a file is uploaded.</p>
+    </div>
+
+    <script>
+        const PRESIGN_URL = '<FUNCTION_URL>';
+        const OUTPUT_BUCKET = '<OUTPUT_BUCKET>';
+        const OUTPUT_REGION = 'us-east-1';
+
+        async function uploadFile() {
+            const content = document.getElementById('fileContent').value;
+            const filename = document.getElementById('fileName').value;
+            const statusEl = document.getElementById('status');
+            const btn = document.getElementById('uploadBtn');
+
+            if (!content.trim()) {
+                statusEl.className = 'status error';
+                statusEl.textContent = 'Please enter some text to upload.';
+                return;
+            }
+
+            btn.disabled = true;
+            statusEl.className = 'status loading';
+            statusEl.textContent = 'Getting upload URL from Lambda...';
+
+            try {
+                const presignResponse = await fetch(PRESIGN_URL + '?filename=' + encodeURIComponent(filename));
+                const presignData = await presignResponse.json();
+
+                statusEl.textContent = 'Uploading file to S3...';
+
+                const uploadResponse = await fetch(presignData.uploadUrl, {
+                    method: 'PUT',
+                    body: content,
+                    headers: { 'Content-Type': 'text/plain' }
+                });
+
+                if (!uploadResponse.ok) throw new Error('Upload failed: ' + uploadResponse.status);
+
+                statusEl.className = 'status loading';
+                statusEl.textContent = 'File uploaded! Waiting for Lambda to process...';
+
+                const outputUrl = 'https://' + OUTPUT_BUCKET + '.s3.' + OUTPUT_REGION + '.amazonaws.com/processed-' + filename;
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+
+                const resultResponse = await fetch(outputUrl);
+                if (resultResponse.ok) {
+                    const resultText = await resultResponse.text();
+                    document.getElementById('result').textContent = resultText;
+                    document.getElementById('downloadLink').href = outputUrl;
+                    document.getElementById('resultSection').style.display = 'block';
+                    statusEl.className = 'status success';
+                    statusEl.textContent = 'File "' + filename + '" processed successfully! See the result below.';
+                } else {
+                    document.getElementById('downloadLink').href = outputUrl;
+                    document.getElementById('result').textContent = 'Processing may still be in progress. Click the link below to check.';
+                    document.getElementById('resultSection').style.display = 'block';
+                    statusEl.className = 'status success';
+                    statusEl.textContent = 'File uploaded! Processing may take a few more seconds. Try the link below.';
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = 'Error: ' + error.message;
+            }
+
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
+```
+
+**Upload the website.** 📋 Replace `<WEBSITE_BUCKET>`:
+
+```
+aws s3 cp index.html s3://<WEBSITE_BUCKET>/index.html --content-type "text/html" --region us-east-1
+```
+
+---
+
+### Step 11: Test Your Application!
+
+Your website URL is:
+
+```
+http://<WEBSITE_BUCKET>.s3-website-us-east-1.amazonaws.com
+```
+
+1. Open this URL in your browser
+2. Type some text in the text area
+3. Click **Upload & Process**
+4. Wait 5 seconds — the processed result should appear on the page
+5. Click **View Processed File** to see the raw output in a new tab
+
+**✅ Checkpoint:** You should see your text converted to UPPERCASE with a word count header.
+
+> **🎉 You just built a complete serverless web application!** A website that accepts user input, processes it with Lambda, and displays the result — all without a single server running 24/7.
 
 ---
 
 ## What You Just Did
 
-You built a **serverless file processing pipeline** — a real-world architecture pattern used by companies for:
-- **Image processing** — resize uploaded photos automatically
-- **Log analysis** — process log files as they arrive
-- **Data transformation** — convert CSV files to JSON, clean data, etc.
-- **Document processing** — extract text from PDFs, generate summaries
+You built a **full-stack serverless application** using 5 AWS services working together:
 
-Your pipeline:
-1. Listens for file uploads to an S3 bucket (event-driven)
-2. Automatically triggers a Lambda function (serverless — no servers to manage)
-3. Processes the file (converts to uppercase, counts words)
-4. Saves the result to a separate output bucket
+1. **S3 (Website Bucket)** — hosts your web page
+2. **Lambda (Presign Function)** — generates secure upload URLs on demand
+3. **S3 (Input Bucket)** — receives uploaded files
+4. **Lambda (Processor Function)** — automatically processes files when they arrive
+5. **S3 (Output Bucket)** — stores and serves processed results
 
-You did this with zero servers, zero infrastructure management, and zero cost (within free tier). The Lambda function only runs when a file is uploaded — the rest of the time, nothing is running and nothing costs money.
+This architecture is used in production by companies for image processing, document conversion, data pipelines, and more. The key insight: **no servers are running when no one is using the app.** You only pay for actual usage.
 
 ---
 
@@ -425,81 +637,68 @@ You did this with zero servers, zero infrastructure management, and zero cost (w
 
 **Target Certification:** AWS Solutions Architect – Associate (SAA)
 
-Lambda and S3 event notifications are frequently tested on the SAA exam. Understanding event-driven architectures and when to use Lambda vs. EC2 is a core exam topic.
+This lab covers event-driven architectures, Lambda triggers, S3 event notifications, and presigned URLs — all heavily tested on the SAA exam.
 
-**Sample question type:** "A company needs to automatically resize images when they are uploaded to S3. Which AWS service should they use to process the images?"
+**Sample question type:** "A company needs to automatically process images when users upload them through a web application. The solution should scale automatically and minimize operational overhead. Which architecture should they use?"
 
 ---
 
 ## Troubleshooting
 
-| Issue | What It Means | How to Fix It |
-|-------|--------------|---------------|
-| No file appears in the output bucket after uploading | Lambda may not have triggered, or it errored | Check Lambda logs: AWS Console → Lambda → workshop-file-processor → Monitor tab → View CloudWatch Logs |
-| `An error occurred (InvalidArgument)` when setting notification | The Lambda ARN in `s3-notification.json` is wrong | Verify your account ID is correct in the file. Make sure there are no extra spaces. |
-| `ResourceConflictException` when creating the function | A function with this name already exists | Delete it first: `aws lambda delete-function --function-name workshop-file-processor --region us-east-1` then try again |
-| Lambda logs show "Access Denied" | The Lambda role doesn't have S3 permissions | Verify `AmazonS3FullAccess` is attached to `workshop-lambda-s3-role` |
+| Issue | How to Fix It |
+|-------|---------------|
+| "Failed to fetch" when clicking Upload | The Function URL permission may not have propagated yet. Wait 2 minutes and try again. |
+| CORS error in browser console | Make sure you ran the CORS configuration on both the input and output buckets (Step 8). |
+| "Access-Control-Allow-Origin contains multiple values" | Your Lambda code is returning CORS headers AND the Function URL is adding them. Remove CORS headers from the Lambda code — the Function URL config handles it. |
+| File uploads but no result appears | Check Lambda logs: Console → Lambda → workshop-processor → Monitor → View CloudWatch Logs. The processing Lambda may have errored. |
+| 403 on the output file | Make sure you completed Step 9 (public access block disabled + bucket policy applied on the output bucket). |
 
 ---
 
 ## Cleanup
 
-**⚠️ Important:** Clean up all resources to prevent any charges.
+**⚠️ Important:** Clean up all resources.
 
-### Step 1: Remove the S3 Event Notification
+### Step 1: Remove S3 Notification
 
-📋 Copy and paste, **replacing `<INPUT_BUCKET>`**:
+📋 Replace `<INPUT_BUCKET>`:
 
-**Windows (PowerShell):**
-
+**Windows:**
 ```powershell
 aws s3api put-bucket-notification-configuration --bucket <INPUT_BUCKET> --notification-configuration "{}" --region us-east-1
 ```
 
 **macOS / Linux:**
-
 ```bash
 aws s3api put-bucket-notification-configuration --bucket <INPUT_BUCKET> --notification-configuration '{}' --region us-east-1
 ```
 
-### Step 2: Delete the Lambda Function
+### Step 2: Delete Lambda Functions
 
 ```
-aws lambda delete-function --function-name workshop-file-processor --region us-east-1
+aws lambda delete-function --function-name workshop-presign --region us-east-1
+aws lambda delete-function --function-name workshop-processor --region us-east-1
 ```
 
-### Step 3: Empty and Delete Both S3 Buckets
+### Step 3: Empty and Delete All Buckets
 
-📋 Copy and paste, **replacing both bucket names**:
+📋 Replace all bucket names:
 
 ```
 aws s3 rm s3://<INPUT_BUCKET> --recursive
-```
-
-```
 aws s3 rm s3://<OUTPUT_BUCKET> --recursive
-```
-
-```
+aws s3 rm s3://<WEBSITE_BUCKET> --recursive
 aws s3 rb s3://<INPUT_BUCKET>
-```
-
-```
 aws s3 rb s3://<OUTPUT_BUCKET>
+aws s3 rb s3://<WEBSITE_BUCKET>
 ```
 
 ### Step 4: Delete the IAM Role
 
 ```
-aws iam detach-role-policy --role-name workshop-lambda-s3-role --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-```
-
-```
-aws iam detach-role-policy --role-name workshop-lambda-s3-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-```
-
-```
-aws iam delete-role --role-name workshop-lambda-s3-role
+aws iam detach-role-policy --role-name workshop-pipeline-role --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+aws iam detach-role-policy --role-name workshop-pipeline-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+aws iam delete-role --role-name workshop-pipeline-role
 ```
 
 ### Step 5: Delete Local Files
@@ -507,21 +706,21 @@ aws iam delete-role --role-name workshop-lambda-s3-role
 **macOS / Linux:**
 
 ```bash
-rm lambda_function.py lambda.zip lambda-trust-policy.json s3-notification.json my-test-file.txt second-test.txt
+rm presign_function.py process_function.py presign.zip process.zip lambda-trust-policy.json s3-notification.json cors.json output-policy.json website-policy.json index.html
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-Remove-Item lambda_function.py, lambda.zip, lambda-trust-policy.json, s3-notification.json, my-test-file.txt, second-test.txt
+Remove-Item presign_function.py, process_function.py, presign.zip, process.zip, lambda-trust-policy.json, s3-notification.json, cors.json, output-policy.json, website-policy.json, index.html
 ```
 
 ### Step 6: Verify Cleanup
 
 **✅ Checkpoint:**
-1. **Lambda** → Functions → `workshop-file-processor` is gone
-2. **S3** → both buckets are gone
-3. **IAM** → Roles → `workshop-lambda-s3-role` is gone
+1. **Lambda** → Functions → both functions are gone
+2. **S3** → all three buckets are gone
+3. **IAM** → Roles → `workshop-pipeline-role` is gone
 
 ---
 
