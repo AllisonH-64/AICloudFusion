@@ -88,9 +88,9 @@ Verify: `aws sts get-caller-identity`
 
 Before launching the instance, we need to create a **role** that gives it permission to use Session Manager. Without this role, you won't be able to connect to the instance.
 
-**First, create a file called `ec2-trust-policy.json`** with this content:
+1. Open your text editor (VS Code, Notepad, or any editor) and create a **new, empty file**.
 
-📋 Copy and paste this into a new file and save it:
+2. 📋 Copy and paste this entire block into the file:
 
 ```json
 {
@@ -107,7 +107,11 @@ Before launching the instance, we need to create a **role** that gives it permis
 }
 ```
 
-> **What does this do?** This is a "trust policy" — it tells AWS that EC2 instances are allowed to use this role. Think of it as saying "this role is for EC2 servers."
+3. **Save the file as `ec2-trust-policy.json`** in the same folder where you are running your terminal commands.
+
+> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+
+> **What does this file do?** This is a "trust policy" — it tells AWS that EC2 instances are allowed to use this role. Think of it as saying "this role is for EC2 servers."
 
 **Now create the role.** 📋 Copy and paste:
 

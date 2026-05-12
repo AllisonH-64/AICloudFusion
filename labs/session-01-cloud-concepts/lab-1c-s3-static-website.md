@@ -342,9 +342,9 @@ aws s3api put-public-access-block --bucket <YOUR_UNIQUE_BUCKET_NAME> --public-ac
 
 Now you need to tell S3 **who** is allowed to access your files. You will create a **bucket policy** — a JSON file that defines the access rules.
 
-**Create a new file** called `bucket-policy.json` in your current directory (not inside the `my-website` folder).
+1. Open your text editor (VS Code, Notepad, or any editor) and create a **new, empty file**.
 
-📋 Copy and paste this into the file, **replacing `<YOUR_UNIQUE_BUCKET_NAME>`** on the `Resource` line, then save:
+2. 📋 Copy and paste this entire block into the file, **replacing `<YOUR_UNIQUE_BUCKET_NAME>`** on the `Resource` line:
 
 ```json
 {
@@ -365,6 +365,12 @@ Now you need to tell S3 **who** is allowed to access your files. You will create
 > ```
 > "Resource": "arn:aws:s3:::jane-doe-cloud-workshop-site/*"
 > ```
+
+3. **Save the file as `bucket-policy.json`** in the same folder where you are running your terminal commands (not inside the `my-website` folder).
+
+> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+
+> **What does this file do?** It defines a bucket policy that allows anyone on the internet to view the files in your S3 bucket — which is what you want for a public website.
 
 **What does each line mean?**
 

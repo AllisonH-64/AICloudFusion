@@ -478,15 +478,23 @@ aws lambda add-permission --function-name workshop-presign --statement-id Functi
 
 ### Step 7: Configure the S3 Event Trigger
 
-Connect the input bucket to the processing Lambda so it fires automatically on upload.
+Now you will connect the input bucket to the processing Lambda so it fires automatically whenever a `.txt` file is uploaded.
 
-**Grant S3 permission to invoke the Lambda.** 📋 Replace `<INPUT_BUCKET>`:
+**Step 7a: Grant S3 permission to invoke the Lambda**
+
+📋 Copy and paste, **replacing `<INPUT_BUCKET>`** with your input bucket name:
 
 ```
 aws lambda add-permission --function-name workshop-processor --statement-id s3-trigger --action lambda:InvokeFunction --principal s3.amazonaws.com --source-arn arn:aws:s3:::<INPUT_BUCKET> --region us-east-1
 ```
 
-**Create `s3-notification.json`.** 📋 Replace `<YOUR_ACCOUNT_ID>`:
+> **What does this do?** Tells Lambda "allow S3 to trigger this function, but only from this specific bucket."
+
+---
+
+**Step 7b: Create the notification configuration file**
+
+Open your text editor and create a **new file**. 📋 Copy and paste this into the file, **replacing `<YOUR_ACCOUNT_ID>`** with your 12-digit account number:
 
 ```json
 {
@@ -509,19 +517,33 @@ aws lambda add-permission --function-name workshop-processor --statement-id s3-t
 }
 ```
 
-📋 Apply it, **replacing `<INPUT_BUCKET>`**:
+**Save the file as `s3-notification.json`** in the same folder as your other files.
+
+> **What does this file do?** It tells S3: "Whenever a new file ending in `.txt` is uploaded to this bucket, send a notification to the `workshop-processor` Lambda function."
+
+> **⚠️ Make sure** you replaced `<YOUR_ACCOUNT_ID>` with your actual 12-digit number inside the file before saving.
+
+---
+
+**Step 7c: Apply the notification configuration**
+
+📋 Copy and paste, **replacing `<INPUT_BUCKET>`**:
 
 ```
 aws s3api put-bucket-notification-configuration --bucket <INPUT_BUCKET> --notification-configuration file://s3-notification.json --region us-east-1
 ```
 
+**✅ No output means success.** Your pipeline is now wired up — uploading a `.txt` file to the input bucket will automatically trigger the processing Lambda.
+
 ---
 
 ### Step 8: Configure CORS on the S3 Buckets
 
-The browser needs permission to upload to the input bucket and read from the output bucket.
+The browser has a security feature called CORS that blocks web pages from talking to other domains unless those domains explicitly allow it. Since your web page (on the website bucket) needs to upload to the input bucket and read from the output bucket, you need to tell those buckets "yes, allow requests from web pages."
 
-**Create `cors.json`:**
+**Step 8a: Create the CORS configuration file**
+
+Open your text editor and create a **new file**. 📋 Copy and paste this into the file (no placeholders to replace here):
 
 ```json
 {
@@ -536,7 +558,15 @@ The browser needs permission to upload to the input bucket and read from the out
 }
 ```
 
-📋 Apply to both buckets, **replacing the bucket names**:
+**Save the file as `cors.json`** in the same folder as your other files.
+
+> **What does this file do?** It says: "Allow any web page to upload files (PUT) and download files (GET) from this bucket."
+
+---
+
+**Step 8b: Apply CORS to both the input and output buckets**
+
+📋 Copy and paste these two commands, **replacing the bucket names**:
 
 ```
 aws s3api put-bucket-cors --bucket <INPUT_BUCKET> --cors-configuration file://cors.json --region us-east-1
@@ -546,19 +576,27 @@ aws s3api put-bucket-cors --bucket <INPUT_BUCKET> --cors-configuration file://co
 aws s3api put-bucket-cors --bucket <OUTPUT_BUCKET> --cors-configuration file://cors.json --region us-east-1
 ```
 
+**✅ No output means success** for both commands.
+
 ---
 
 ### Step 9: Make the Output Bucket Publicly Readable
 
-So the web page can fetch and display the processed results.
+The web page needs to be able to fetch the processed results from the output bucket and display them. For this, the output bucket needs to be publicly readable (just like the website bucket in Lab 1C).
 
-📋 Replace `<OUTPUT_BUCKET>`:
+**Step 9a: Disable Block Public Access on the output bucket**
+
+📋 Copy and paste, **replacing `<OUTPUT_BUCKET>`**:
 
 ```
 aws s3api put-public-access-block --bucket <OUTPUT_BUCKET> --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 ```
 
-**Create `output-policy.json`.** 📋 Replace `<OUTPUT_BUCKET>`:
+---
+
+**Step 9b: Create the public read policy file**
+
+Open your text editor and create a **new file**. 📋 Copy and paste this, **replacing `<OUTPUT_BUCKET>`** with your actual output bucket name:
 
 ```json
 {
@@ -575,11 +613,21 @@ aws s3api put-public-access-block --bucket <OUTPUT_BUCKET> --public-access-block
 }
 ```
 
-📋 Apply it:
+**Save the file as `output-policy.json`**.
+
+> **⚠️ Make sure** you replaced `<OUTPUT_BUCKET>` with your actual bucket name inside the file before saving.
+
+---
+
+**Step 9c: Apply the policy**
+
+📋 Copy and paste, **replacing `<OUTPUT_BUCKET>`**:
 
 ```
 aws s3api put-bucket-policy --bucket <OUTPUT_BUCKET> --policy file://output-policy.json
 ```
+
+**✅ No output means success.**
 
 ---
 
@@ -597,7 +645,9 @@ aws s3 website s3://<WEBSITE_BUCKET> --index-document index.html --error-documen
 aws s3api put-public-access-block --bucket <WEBSITE_BUCKET> --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 ```
 
-**Create `website-policy.json`.** 📋 Replace `<WEBSITE_BUCKET>`:
+**Step 10a: Create the website bucket policy file**
+
+Open your text editor and create a **new file**. 📋 Copy and paste this into the file, **replacing `<WEBSITE_BUCKET>`** with your actual website bucket name:
 
 ```json
 {
@@ -614,11 +664,21 @@ aws s3api put-public-access-block --bucket <WEBSITE_BUCKET> --public-access-bloc
 }
 ```
 
+**Save the file as `website-policy.json`** in the same folder as your other files.
+
+> **What does this file do?** It tells S3: "Allow anyone on the internet to read (view) files in this bucket." This is what makes your website publicly accessible.
+
+> **⚠️ Make sure** you replaced `<WEBSITE_BUCKET>` with your actual bucket name inside the file before saving.
+
+**Apply the policy.** 📋 Copy and paste, **replacing `<WEBSITE_BUCKET>`**:
+
 ```
 aws s3api put-bucket-policy --bucket <WEBSITE_BUCKET> --policy file://website-policy.json
 ```
 
-**Create `index.html`.** 📋 Copy this entire file, **replacing `<FUNCTION_URL>` and `<OUTPUT_BUCKET>`** with your actual values:
+**Step 10b: Create the website HTML file**
+
+Open your text editor and create a **new file**. 📋 Copy and paste this entire block into the file, **replacing `<FUNCTION_URL>` and `<OUTPUT_BUCKET>`** with your actual values:
 
 ```html
 <!DOCTYPE html>
@@ -752,7 +812,17 @@ aws s3api put-bucket-policy --bucket <WEBSITE_BUCKET> --policy file://website-po
 </html>
 ```
 
-**Upload the website.** 📋 Replace `<WEBSITE_BUCKET>`:
+**Save the file as `index.html`** in the same folder as your other files.
+
+> **What does this file do?** This is your complete web application — it provides a text box for input, calls your Lambda function to get a presigned upload URL, uploads the file to S3, waits for processing, and displays the result. All in one HTML file.
+
+> **⚠️ Make sure** you replaced both `<FUNCTION_URL>` (your Lambda Function URL from Step 6) and `<OUTPUT_BUCKET>` (your output bucket name) inside the file before saving. Look for them near the bottom of the file in the `<script>` section.
+
+---
+
+**Step 10c: Upload the website**
+
+📋 Copy and paste, **replacing `<WEBSITE_BUCKET>`**:
 
 ```
 aws s3 cp index.html s3://<WEBSITE_BUCKET>/index.html --content-type "text/html" --region us-east-1

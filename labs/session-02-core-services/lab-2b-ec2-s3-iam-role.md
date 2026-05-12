@@ -108,7 +108,9 @@ aws ssm get-parameters-by-path --path "/aws/service/ami-amazon-linux-latest" --r
 
 **Create the trust policy file** (`ec2-trust-policy.json`):
 
-📋 Copy and paste into a new file and save:
+1. Open your text editor (VS Code, Notepad, or any editor) and create a **new, empty file**.
+
+2. 📋 Copy and paste this entire block into the file:
 
 ```json
 {
@@ -124,6 +126,12 @@ aws ssm get-parameters-by-path --path "/aws/service/ami-amazon-linux-latest" --r
     ]
 }
 ```
+
+3. **Save the file as `ec2-trust-policy.json`** in the same folder where you are running your terminal commands.
+
+> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+
+> **What does this file do?** This is a "trust policy" — it tells AWS that EC2 instances are allowed to use this role. Think of it as saying "this role is for EC2 servers."
 
 **Create the role and attach policies.** 📋 Copy and paste these commands one at a time:
 

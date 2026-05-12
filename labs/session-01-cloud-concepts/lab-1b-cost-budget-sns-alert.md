@@ -195,9 +195,9 @@ AWS just sent a confirmation email to the address you provided. You need to clic
 
 AWS Budgets needs a configuration file that describes your budget. You will create a small JSON file (a structured text file that AWS can read).
 
-**Create a new file** called `budget.json` in your current directory. You can do this with any text editor (VS Code, Notepad, etc.).
+1. Open your text editor (VS Code, Notepad, or any editor) and create a **new, empty file**.
 
-📋 Copy and paste this entire block into the file and save it:
+2. 📋 Copy and paste this entire block into the file:
 
 ```json
 {
@@ -210,6 +210,12 @@ AWS Budgets needs a configuration file that describes your budget. You will crea
     "TimeUnit": "MONTHLY"
 }
 ```
+
+3. **Save the file as `budget.json`** in the same folder where you are running your terminal commands.
+
+> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+
+> **What does this file do?** It defines your budget configuration — the name, dollar limit, type, and time period that AWS Budgets will use.
 
 **What does each line mean?**
 
@@ -227,9 +233,9 @@ AWS Budgets needs a configuration file that describes your budget. You will crea
 
 Now create a second file that tells AWS Budgets **when** to send an alert and **where** to send it.
 
-**Create a new file** called `notifications.json` in the same directory.
+1. Open your text editor and create a **new file**.
 
-📋 Copy and paste this into the file, **replacing `<YOUR_TOPIC_ARN>`** with the TopicArn you saved in Step 2, then save:
+2. 📋 Copy and paste this entire block into the file, **replacing `<YOUR_TOPIC_ARN>`** with the TopicArn you saved in Step 2:
 
 ```json
 [
@@ -249,6 +255,12 @@ Now create a second file that tells AWS Budgets **when** to send an alert and **
     }
 ]
 ```
+
+3. **Save the file as `notifications.json`** in the same folder where you are running your terminal commands.
+
+> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+
+> **What does this file do?** It tells AWS Budgets when to send an alert (at 80% of your budget) and where to send it (your SNS topic, which forwards to your email).
 
 **What does each part mean?**
 
