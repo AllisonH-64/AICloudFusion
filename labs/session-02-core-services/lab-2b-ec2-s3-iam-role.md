@@ -57,8 +57,8 @@ This is a real-world pattern — applications running on EC2 frequently need to 
 |-------------|------------------------|---------|
 | `<YOUR_PROFILE_NAME>` | Your AWS CLI profile name | `AdministratorAccess-123456789012` |
 | `<YOUR_UNIQUE_BUCKET_NAME>` | A globally unique S3 bucket name | `jane-doe-workshop-session2` |
-| `<AMI_ID>` | The AMI ID from Step 3 | `ami-0a59ec92177ec3fad` |
-| `<YOUR_INSTANCE_ID>` | The instance ID from Step 5 | `i-0abc123def456789` |
+| `<AMI_ID>` | The AMI ID from Step 4 | `ami-0a59ec92177ec3fad` |
+| `<YOUR_INSTANCE_ID>` | The instance ID from Step 6 | `i-0abc123def456789` |
 
 ---
 
@@ -80,7 +80,53 @@ export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 
 ---
 
-### Step 2: Create an S3 Bucket
+### Step 2: Create Your Project Folder
+
+Before creating any files, let's set up a dedicated folder for this lab. This keeps your files organized and ensures your terminal can find them.
+
+**Step 2a: Create the folder**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste:
+
+```powershell
+mkdir ~\Desktop\workshop-lab-2b
+cd ~\Desktop\workshop-lab-2b
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste:
+
+```bash
+mkdir ~/Desktop/workshop-lab-2b
+cd ~/Desktop/workshop-lab-2b
+```
+
+> **What does this do?** Creates a new folder on your Desktop called `workshop-lab-2b` and moves your terminal into that folder. All commands you run and files you create will be in this folder.
+
+**Step 2b: Verify you're in the right folder**
+
+📋 Copy and paste:
+
+**Windows (PowerShell):**
+```powershell
+pwd
+```
+
+**macOS / Linux:**
+```bash
+pwd
+```
+
+**✅ You should see** a path ending in `workshop-lab-2b` (e.g., `C:\Users\YourName\Desktop\workshop-lab-2b` on Windows or `/Users/YourName/Desktop/workshop-lab-2b` on Mac).
+
+> **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here. This is where your terminal is looking for files.
+
+---
+
+### Step 3: Create an S3 Bucket
 
 📋 Copy and paste, **replacing `<YOUR_UNIQUE_BUCKET_NAME>`**:
 
@@ -92,7 +138,7 @@ aws s3 mb s3://<YOUR_UNIQUE_BUCKET_NAME> --region us-east-1
 
 ---
 
-### Step 3: Get the Latest Amazon Linux AMI ID
+### Step 4: Get the Latest Amazon Linux AMI ID
 
 📋 Copy and paste:
 
@@ -104,7 +150,7 @@ aws ssm get-parameters-by-path --path "/aws/service/ami-amazon-linux-latest" --r
 
 ---
 
-### Step 4: Create an IAM Role with S3 and Session Manager Access
+### Step 5: Create an IAM Role with S3 and Session Manager Access
 
 **Create the trust policy file** (`ec2-trust-policy.json`):
 
@@ -127,7 +173,7 @@ aws ssm get-parameters-by-path --path "/aws/service/ami-amazon-linux-latest" --r
 }
 ```
 
-3. **Save the file as `ec2-trust-policy.json`** in the same folder where you are running your terminal commands.
+3. **Save the file as `ec2-trust-policy.json`** in your `workshop-lab-2b` folder on your Desktop.
 
 > **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
 
@@ -163,7 +209,7 @@ aws iam add-role-to-instance-profile --instance-profile-name workshop-ec2-s3-pro
 
 ---
 
-### Step 5: Launch the EC2 Instance
+### Step 6: Launch the EC2 Instance
 
 📋 Copy and paste, **replacing `<AMI_ID>`**:
 
@@ -192,7 +238,7 @@ aws ec2 run-instances \
 
 ---
 
-### Step 6: Wait for the Instance and Connect
+### Step 7: Wait for the Instance and Connect
 
 📋 Copy and paste, **replacing `<YOUR_INSTANCE_ID>`**:
 
@@ -208,7 +254,7 @@ aws ec2 wait instance-running --instance-ids <YOUR_INSTANCE_ID> --region us-east
 
 ---
 
-### Step 7: Upload a File to S3 from the EC2 Instance
+### Step 8: Upload a File to S3 from the EC2 Instance
 
 You are now on the EC2 instance. Let's create a file and upload it to your S3 bucket.
 
@@ -240,7 +286,7 @@ aws s3 ls s3://<YOUR_UNIQUE_BUCKET_NAME>/
 
 ---
 
-### Step 8: Download a File from S3 to the EC2 Instance
+### Step 9: Download a File from S3 to the EC2 Instance
 
 Let's also test downloading. First, create another file in S3 from your **local terminal** (not the EC2 session).
 
@@ -280,7 +326,7 @@ cat /tmp/downloaded-file.txt
 
 ---
 
-### Step 9: Verify in the AWS Console
+### Step 10: Verify in the AWS Console
 
 **✅ Checkpoint:**
 1. Go to **S3** in the AWS Console
@@ -376,9 +422,19 @@ aws iam delete-role --role-name workshop-ec2-s3-role
 
 ### Step 5: Delete Local Files
 
-**macOS / Linux:** `rm ec2-trust-policy.json local-file.txt`
+Remove the project folder you created for this lab:
 
-**Windows:** `Remove-Item ec2-trust-policy.json, local-file.txt`
+**macOS / Linux:**
+
+```bash
+rm -rf ~/Desktop/workshop-lab-2b
+```
+
+**Windows (PowerShell):**
+
+```powershell
+Remove-Item -Recurse -Force ~\Desktop\workshop-lab-2b
+```
 
 ### Step 6: Verify Cleanup
 

@@ -65,7 +65,7 @@ This is a real-world architecture pattern — serverless web applications that p
 | `<INPUT_BUCKET>` | Unique name for input bucket | `jane-doe-pipeline-input` |
 | `<OUTPUT_BUCKET>` | Unique name for output bucket | `jane-doe-pipeline-output` |
 | `<WEBSITE_BUCKET>` | Unique name for website bucket | `jane-doe-pipeline-website` |
-| `<FUNCTION_URL>` | The Lambda Function URL (you'll get this in Step 8) | `https://abc123.lambda-url.us-east-1.on.aws/` |
+| `<FUNCTION_URL>` | The Lambda Function URL (you'll get this in Step 7) | `https://abc123.lambda-url.us-east-1.on.aws/` |
 
 ---
 
@@ -87,7 +87,53 @@ export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 
 ---
 
-### Step 2: Create Three S3 Buckets
+### Step 2: Create Your Project Folder
+
+Before creating any files, let's set up a dedicated folder for this lab. This keeps your files organized and ensures your terminal can find them.
+
+**Step 2a: Create the folder**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste:
+
+```powershell
+mkdir ~\Desktop\workshop-lab-2c
+cd ~\Desktop\workshop-lab-2c
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste:
+
+```bash
+mkdir ~/Desktop/workshop-lab-2c
+cd ~/Desktop/workshop-lab-2c
+```
+
+> **What does this do?** Creates a new folder on your Desktop called `workshop-lab-2c` and moves your terminal into that folder. All commands you run and files you create will be in this folder.
+
+**Step 2b: Verify you're in the right folder**
+
+📋 Copy and paste:
+
+**Windows (PowerShell):**
+```powershell
+pwd
+```
+
+**macOS / Linux:**
+```bash
+pwd
+```
+
+**✅ You should see** a path ending in `workshop-lab-2c` (e.g., `C:\Users\YourName\Desktop\workshop-lab-2c` on Windows or `/Users/YourName/Desktop/workshop-lab-2c` on Mac).
+
+> **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here. This is where your terminal is looking for files.
+
+---
+
+### Step 3: Create Three S3 Buckets
 
 You need three buckets: one for the website, one for file uploads (input), and one for processed results (output).
 
@@ -101,11 +147,11 @@ aws s3 mb s3://<WEBSITE_BUCKET> --region us-east-1
 
 ---
 
-### Step 3: Create the Lambda IAM Role
+### Step 4: Create the Lambda IAM Role
 
 Both Lambda functions need a role that gives them permission to access S3 and write logs. You will create this role now.
 
-**Step 3a: Create the trust policy file**
+**Step 4a: Create the trust policy file**
 
 Open your text editor and create a **new file**. 📋 Copy and paste this into the file:
 
@@ -124,13 +170,13 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `lambda-trust-policy.json`** in the same folder where you are running your terminal commands.
+**Save the file as `lambda-trust-policy.json`** in your `workshop-lab-2c` folder on your Desktop.
 
 > **What is this file?** It tells AWS "Lambda functions are allowed to use this role." Without it, Lambda can't assume the role's permissions.
 
 ---
 
-**Step 3b: Create the role and attach permissions**
+**Step 4b: Create the role and attach permissions**
 
 📋 Copy and paste these three commands into your terminal, **one at a time**, pressing Enter after each:
 
@@ -156,7 +202,7 @@ aws iam attach-role-policy --role-name workshop-pipeline-role --policy-arn arn:a
 
 ---
 
-### Step 4: Create the Presign Lambda Function
+### Step 5: Create the Presign Lambda Function
 
 Now you will create the first Lambda function. This function's job is simple: when the web page asks for an upload link, this function generates a temporary URL that allows the upload.
 
@@ -164,15 +210,15 @@ Now you will create the first Lambda function. This function's job is simple: wh
 
 ---
 
-**Step 4a: Open your text editor and create a new file**
+**Step 5a: Open your text editor and create a new file**
 
 Open your text editor (VS Code, Notepad, or any editor). Create a **new, empty file**.
 
-> **💡 Important:** Make sure you are saving files in the **same folder** where you have been running your terminal commands. If you're not sure which folder that is, type `pwd` in your terminal (macOS/Linux) or check the path shown in your PowerShell prompt (e.g., `C:\Users\YourName`).
+> **💡 Important:** Make sure you are saving files in your `workshop-lab-2c` folder on your Desktop. If you're not sure which folder that is, type `pwd` in your terminal to confirm.
 
 ---
 
-**Step 4b: Copy and paste the code below into the file**
+**Step 5b: Copy and paste the code below into the file**
 
 📋 Copy this **entire block** of code and paste it into your new file. Do not change anything — copy it exactly as shown:
 
@@ -207,9 +253,9 @@ def lambda_handler(event, context):
 
 ---
 
-**Step 4c: Save the file as `presign_function.py`**
+**Step 5c: Save the file as `presign_function.py`**
 
-Save the file with the **exact name** `presign_function.py`. The name matters — Lambda uses it to find the code.
+Save the file with the **exact name** `presign_function.py` in your `workshop-lab-2c` folder on your Desktop. The name matters — Lambda uses it to find the code.
 
 > **⚠️ Common mistakes:**
 > - Make sure the file extension is `.py` (not `.py.txt` or `.txt`)
@@ -218,7 +264,7 @@ Save the file with the **exact name** `presign_function.py`. The name matters �
 
 ---
 
-**Step 4d: What does this code do? (optional reading)**
+**Step 5d: What does this code do? (optional reading)**
 
 You don't need to understand the code to complete this lab, but here's what each part does if you're curious:
 
@@ -235,7 +281,7 @@ You don't need to understand the code to complete this lab, but here's what each
 
 ---
 
-**Step 4e: Package the code into a zip file**
+**Step 5e: Package the code into a zip file**
 
 Lambda requires code to be uploaded as a `.zip` file. You will zip the file you just created.
 
@@ -261,7 +307,7 @@ Compress-Archive -Path presign_function.py -DestinationPath presign.zip -Force
 
 ---
 
-**Step 4f: Deploy the function to AWS Lambda**
+**Step 5f: Deploy the function to AWS Lambda**
 
 Now you will upload the zip file to Lambda and create the function.
 
@@ -289,7 +335,7 @@ aws lambda create-function \
 > **What does each part mean?**
 > - `--function-name workshop-presign` — names the function so you can find it later
 > - `--runtime python3.12` — tells Lambda to use Python to run the code
-> - `--role "arn:aws:iam::..."` — which permissions the function has (the role you created in Step 3)
+> - `--role "arn:aws:iam::..."` — which permissions the function has (the role you created in Step 4)
 > - `--handler presign_function.lambda_handler` — tells Lambda "look in the file `presign_function.py` and call the function named `lambda_handler`"
 > - `--zip-file fileb://presign.zip` — the code package to upload (`fileb://` means "binary file from my computer")
 > - `--environment "Variables={INPUT_BUCKET=...}"` — passes your input bucket name to the function as a configuration variable (this is how the code knows which bucket to generate URLs for)
@@ -303,7 +349,7 @@ aws lambda create-function \
 
 ---
 
-### Step 5: Create the Processing Lambda Function
+### Step 6: Create the Processing Lambda Function
 
 Now you will create the second Lambda function. This one triggers automatically when a file is uploaded to the input bucket. It reads the file, converts the text to uppercase, counts the words, and saves the result to the output bucket.
 
@@ -311,13 +357,13 @@ Again — **you do NOT need to know Python.** Just copy the code exactly as show
 
 ---
 
-**Step 5a: Open your text editor and create a new file**
+**Step 6a: Open your text editor and create a new file**
 
-Create another **new, empty file** in your text editor. This will be a separate file from the one you created in Step 4.
+Create another **new, empty file** in your text editor. This will be a separate file from the one you created in Step 5.
 
 ---
 
-**Step 5b: Copy and paste the code below into the file**
+**Step 6b: Copy and paste the code below into the file**
 
 📋 Copy this **entire block** of code and paste it into your new file:
 
@@ -362,15 +408,15 @@ def lambda_handler(event, context):
 
 ---
 
-**Step 5c: Save the file as `process_function.py`**
+**Step 6c: Save the file as `process_function.py`**
 
-Save the file with the **exact name** `process_function.py` in the **same folder** as your other files.
+Save the file with the **exact name** `process_function.py` in your `workshop-lab-2c` folder on your Desktop.
 
 > **⚠️ Same warnings as before:** Make sure the extension is `.py`, not `.py.txt`. Make sure there are no extra spaces at the beginning.
 
 ---
 
-**Step 5d: What does this code do? (optional reading)**
+**Step 6d: What does this code do? (optional reading)**
 
 | Line(s) | What It Does |
 |---------|-------------|
@@ -388,7 +434,7 @@ Save the file with the **exact name** `process_function.py` in the **same folder
 
 ---
 
-**Step 5e: Package the code into a zip file**
+**Step 6e: Package the code into a zip file**
 
 **macOS / Linux:**
 
@@ -410,7 +456,7 @@ Compress-Archive -Path process_function.py -DestinationPath process.zip -Force
 
 ---
 
-**Step 5f: Deploy the function to AWS Lambda**
+**Step 6f: Deploy the function to AWS Lambda**
 
 📋 Copy and paste, **replacing `<YOUR_ACCOUNT_ID>` and `<OUTPUT_BUCKET>`**:
 
@@ -446,7 +492,7 @@ aws lambda create-function \
 
 ---
 
-### Step 6: Create a Function URL for the Presign Lambda
+### Step 7: Create a Function URL for the Presign Lambda
 
 This gives the presign function a public URL that the web page can call.
 
@@ -476,11 +522,11 @@ aws lambda add-permission --function-name workshop-presign --statement-id Functi
 
 ---
 
-### Step 7: Configure the S3 Event Trigger
+### Step 8: Configure the S3 Event Trigger
 
 Now you will connect the input bucket to the processing Lambda so it fires automatically whenever a `.txt` file is uploaded.
 
-**Step 7a: Grant S3 permission to invoke the Lambda**
+**Step 8a: Grant S3 permission to invoke the Lambda**
 
 📋 Copy and paste, **replacing `<INPUT_BUCKET>`** with your input bucket name:
 
@@ -492,7 +538,7 @@ aws lambda add-permission --function-name workshop-processor --statement-id s3-t
 
 ---
 
-**Step 7b: Create the notification configuration file**
+**Step 8b: Create the notification configuration file**
 
 Open your text editor and create a **new file**. 📋 Copy and paste this into the file, **replacing `<YOUR_ACCOUNT_ID>`** with your 12-digit account number:
 
@@ -517,7 +563,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `s3-notification.json`** in the same folder as your other files.
+**Save the file as `s3-notification.json`** in your `workshop-lab-2c` folder on your Desktop.
 
 > **What does this file do?** It tells S3: "Whenever a new file ending in `.txt` is uploaded to this bucket, send a notification to the `workshop-processor` Lambda function."
 
@@ -525,7 +571,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 
 ---
 
-**Step 7c: Apply the notification configuration**
+**Step 8c: Apply the notification configuration**
 
 📋 Copy and paste, **replacing `<INPUT_BUCKET>`**:
 
@@ -537,11 +583,11 @@ aws s3api put-bucket-notification-configuration --bucket <INPUT_BUCKET> --notifi
 
 ---
 
-### Step 8: Configure CORS on the S3 Buckets
+### Step 9: Configure CORS on the S3 Buckets
 
 The browser has a security feature called CORS that blocks web pages from talking to other domains unless those domains explicitly allow it. Since your web page (on the website bucket) needs to upload to the input bucket and read from the output bucket, you need to tell those buckets "yes, allow requests from web pages."
 
-**Step 8a: Create the CORS configuration file**
+**Step 9a: Create the CORS configuration file**
 
 Open your text editor and create a **new file**. 📋 Copy and paste this into the file (no placeholders to replace here):
 
@@ -558,13 +604,13 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `cors.json`** in the same folder as your other files.
+**Save the file as `cors.json`** in your `workshop-lab-2c` folder on your Desktop.
 
 > **What does this file do?** It says: "Allow any web page to upload files (PUT) and download files (GET) from this bucket."
 
 ---
 
-**Step 8b: Apply CORS to both the input and output buckets**
+**Step 9b: Apply CORS to both the input and output buckets**
 
 📋 Copy and paste these two commands, **replacing the bucket names**:
 
@@ -580,11 +626,11 @@ aws s3api put-bucket-cors --bucket <OUTPUT_BUCKET> --cors-configuration file://c
 
 ---
 
-### Step 9: Make the Output Bucket Publicly Readable
+### Step 10: Make the Output Bucket Publicly Readable
 
 The web page needs to be able to fetch the processed results from the output bucket and display them. For this, the output bucket needs to be publicly readable (just like the website bucket in Lab 1C).
 
-**Step 9a: Disable Block Public Access on the output bucket**
+**Step 10a: Disable Block Public Access on the output bucket**
 
 📋 Copy and paste, **replacing `<OUTPUT_BUCKET>`**:
 
@@ -594,7 +640,7 @@ aws s3api put-public-access-block --bucket <OUTPUT_BUCKET> --public-access-block
 
 ---
 
-**Step 9b: Create the public read policy file**
+**Step 10b: Create the public read policy file**
 
 Open your text editor and create a **new file**. 📋 Copy and paste this, **replacing `<OUTPUT_BUCKET>`** with your actual output bucket name:
 
@@ -613,13 +659,13 @@ Open your text editor and create a **new file**. 📋 Copy and paste this, **rep
 }
 ```
 
-**Save the file as `output-policy.json`**.
+**Save the file as `output-policy.json`** in your `workshop-lab-2c` folder on your Desktop.
 
 > **⚠️ Make sure** you replaced `<OUTPUT_BUCKET>` with your actual bucket name inside the file before saving.
 
 ---
 
-**Step 9c: Apply the policy**
+**Step 10c: Apply the policy**
 
 📋 Copy and paste, **replacing `<OUTPUT_BUCKET>`**:
 
@@ -631,7 +677,7 @@ aws s3api put-bucket-policy --bucket <OUTPUT_BUCKET> --policy file://output-poli
 
 ---
 
-### Step 10: Create and Deploy the Website
+### Step 11: Create and Deploy the Website
 
 **Set up the website bucket** (same as Lab 1C):
 
@@ -645,7 +691,7 @@ aws s3 website s3://<WEBSITE_BUCKET> --index-document index.html --error-documen
 aws s3api put-public-access-block --bucket <WEBSITE_BUCKET> --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
 ```
 
-**Step 10a: Create the website bucket policy file**
+**Step 11a: Create the website bucket policy file**
 
 Open your text editor and create a **new file**. 📋 Copy and paste this into the file, **replacing `<WEBSITE_BUCKET>`** with your actual website bucket name:
 
@@ -664,7 +710,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `website-policy.json`** in the same folder as your other files.
+**Save the file as `website-policy.json`** in your `workshop-lab-2c` folder on your Desktop.
 
 > **What does this file do?** It tells S3: "Allow anyone on the internet to read (view) files in this bucket." This is what makes your website publicly accessible.
 
@@ -676,7 +722,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 aws s3api put-bucket-policy --bucket <WEBSITE_BUCKET> --policy file://website-policy.json
 ```
 
-**Step 10b: Create the website HTML file**
+**Step 11b: Create the website HTML file**
 
 Open your text editor and create a **new file**. 📋 Copy and paste this entire block into the file, **replacing `<FUNCTION_URL>` and `<OUTPUT_BUCKET>`** with your actual values:
 
@@ -812,15 +858,15 @@ Open your text editor and create a **new file**. 📋 Copy and paste this entire
 </html>
 ```
 
-**Save the file as `index.html`** in the same folder as your other files.
+**Save the file as `index.html`** in your `workshop-lab-2c` folder on your Desktop.
 
 > **What does this file do?** This is your complete web application — it provides a text box for input, calls your Lambda function to get a presigned upload URL, uploads the file to S3, waits for processing, and displays the result. All in one HTML file.
 
-> **⚠️ Make sure** you replaced both `<FUNCTION_URL>` (your Lambda Function URL from Step 6) and `<OUTPUT_BUCKET>` (your output bucket name) inside the file before saving. Look for them near the bottom of the file in the `<script>` section.
+> **⚠️ Make sure** you replaced both `<FUNCTION_URL>` (your Lambda Function URL from Step 7) and `<OUTPUT_BUCKET>` (your output bucket name) inside the file before saving. Look for them near the bottom of the file in the `<script>` section.
 
 ---
 
-**Step 10c: Upload the website**
+**Step 11c: Upload the website**
 
 📋 Copy and paste, **replacing `<WEBSITE_BUCKET>`**:
 
@@ -830,7 +876,7 @@ aws s3 cp index.html s3://<WEBSITE_BUCKET>/index.html --content-type "text/html"
 
 ---
 
-### Step 11: Test Your Application!
+### Step 12: Test Your Application!
 
 Your website URL is:
 
@@ -879,10 +925,10 @@ This lab covers event-driven architectures, Lambda triggers, S3 event notificati
 | Issue | How to Fix It |
 |-------|---------------|
 | "Failed to fetch" when clicking Upload | The Function URL permission may not have propagated yet. Wait 2 minutes and try again. |
-| CORS error in browser console | Make sure you ran the CORS configuration on both the input and output buckets (Step 8). |
+| CORS error in browser console | Make sure you ran the CORS configuration on both the input and output buckets (Step 9). |
 | "Access-Control-Allow-Origin contains multiple values" | Your Lambda code is returning CORS headers AND the Function URL is adding them. Remove CORS headers from the Lambda code — the Function URL config handles it. |
 | File uploads but no result appears | Check Lambda logs: Console → Lambda → workshop-processor → Monitor → View CloudWatch Logs. The processing Lambda may have errored. |
-| 403 on the output file | Make sure you completed Step 9 (public access block disabled + bucket policy applied on the output bucket). |
+| 403 on the output file | Make sure you completed Step 10 (public access block disabled + bucket policy applied on the output bucket). |
 
 ---
 
@@ -934,16 +980,18 @@ aws iam delete-role --role-name workshop-pipeline-role
 
 ### Step 5: Delete Local Files
 
+Remove the project folder you created for this lab:
+
 **macOS / Linux:**
 
 ```bash
-rm presign_function.py process_function.py presign.zip process.zip lambda-trust-policy.json s3-notification.json cors.json output-policy.json website-policy.json index.html
+rm -rf ~/Desktop/workshop-lab-2c
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-Remove-Item presign_function.py, process_function.py, presign.zip, process.zip, lambda-trust-policy.json, s3-notification.json, cors.json, output-policy.json, website-policy.json, index.html
+Remove-Item -Recurse -Force ~\Desktop\workshop-lab-2c
 ```
 
 ### Step 6: Verify Cleanup

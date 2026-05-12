@@ -84,7 +84,53 @@ Verify: `aws sts get-caller-identity`
 
 ---
 
-### Step 2: Create an IAM Role for the EC2 Instance
+### Step 2: Create Your Project Folder
+
+Before creating any files, let's set up a dedicated folder for this lab. This keeps your files organized and ensures your terminal can find them.
+
+**Step 2a: Create the folder**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste:
+
+```powershell
+mkdir ~\Desktop\workshop-lab-2a
+cd ~\Desktop\workshop-lab-2a
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste:
+
+```bash
+mkdir ~/Desktop/workshop-lab-2a
+cd ~/Desktop/workshop-lab-2a
+```
+
+> **What does this do?** Creates a new folder on your Desktop called `workshop-lab-2a` and moves your terminal into that folder. All commands you run and files you create will be in this folder.
+
+**Step 2b: Verify you're in the right folder**
+
+📋 Copy and paste:
+
+**Windows (PowerShell):**
+```powershell
+pwd
+```
+
+**macOS / Linux:**
+```bash
+pwd
+```
+
+**✅ You should see** a path ending in `workshop-lab-2a` (e.g., `C:\Users\YourName\Desktop\workshop-lab-2a` on Windows or `/Users/YourName/Desktop/workshop-lab-2a` on Mac).
+
+> **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here. This is where your terminal is looking for files.
+
+---
+
+### Step 3: Create an IAM Role for the EC2 Instance
 
 Before launching the instance, we need to create a **role** that gives it permission to use Session Manager. Without this role, you won't be able to connect to the instance.
 
@@ -107,7 +153,7 @@ Before launching the instance, we need to create a **role** that gives it permis
 }
 ```
 
-3. **Save the file as `ec2-trust-policy.json`** in the same folder where you are running your terminal commands.
+3. **Save the file as `ec2-trust-policy.json`** in your `workshop-lab-2a` folder on your Desktop.
 
 > **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
 
@@ -145,7 +191,7 @@ aws iam add-role-to-instance-profile --instance-profile-name workshop-ec2-ssm-pr
 
 ---
 
-### Step 3: Get the Latest Amazon Linux AMI ID
+### Step 4: Get the Latest Amazon Linux AMI ID
 
 We need the ID of the operating system image to use. This command looks up the latest Amazon Linux 2023 AMI:
 
@@ -163,9 +209,9 @@ aws ssm get-parameters-by-path --path "/aws/service/ami-amazon-linux-latest" --r
 
 ---
 
-### Step 4: Launch the EC2 Instance
+### Step 5: Launch the EC2 Instance
 
-Now launch your virtual server. 📋 Copy and paste this command, **replacing `<AMI_ID>`** with the ID from Step 3:
+Now launch your virtual server. 📋 Copy and paste this command, **replacing `<AMI_ID>`** with the ID from Step 4:
 
 **macOS / Linux:**
 
@@ -204,7 +250,7 @@ aws ec2 run-instances --image-id <AMI_ID> --instance-type t2.micro --iam-instanc
 
 ---
 
-### Step 5: Wait for the Instance to Be Ready
+### Step 6: Wait for the Instance to Be Ready
 
 The instance needs about 1–2 minutes to fully start up and register with Session Manager.
 
@@ -230,7 +276,7 @@ aws ssm describe-instance-information --region us-east-1 --filters "Key=Instance
 
 ---
 
-### Step 6: Connect to Your Instance via Session Manager
+### Step 7: Connect to Your Instance via Session Manager
 
 Now you will connect to your virtual server — you'll get a terminal session on the remote machine.
 
@@ -255,7 +301,7 @@ aws ssm start-session --target <YOUR_INSTANCE_ID> --region us-east-1
 
 ---
 
-### Step 7: Explore Your Instance
+### Step 8: Explore Your Instance
 
 You are now connected to a Linux server running in the cloud. Try these commands to explore:
 
@@ -301,7 +347,7 @@ Or if you used the console, just close the browser tab.
 
 ---
 
-### Step 8: View Instance Details from the CLI
+### Step 9: View Instance Details from the CLI
 
 Back on your local terminal, let's check the instance details:
 
@@ -343,7 +389,7 @@ EC2 is one of the most heavily tested services on the SAA exam. Understanding in
 
 | Issue | What It Means | How to Fix It |
 |-------|--------------|---------------|
-| `InvalidParameterValue` when launching | The AMI ID may be wrong or expired | Re-run the command in Step 3 to get the latest AMI ID |
+| `InvalidParameterValue` when launching | The AMI ID may be wrong or expired | Re-run the command in Step 4 to get the latest AMI ID |
 | Session Manager says "not connected" | The SSM agent hasn't registered yet | Wait 1–2 minutes and try again. Make sure the IAM role was attached correctly. |
 | `An error occurred (UnauthorizedOperation)` | Your CLI profile doesn't have EC2 permissions | Make sure you're using the AdministratorAccess profile |
 | Instance stuck in "Pending" state | Normal — it takes 1–2 minutes to start | Wait and refresh the console page |
@@ -392,11 +438,19 @@ aws iam delete-role --role-name workshop-ec2-ssm-role
 
 ### Step 4: Delete Local Files
 
-```
-rm ec2-trust-policy.json
+Remove the project folder you created for this lab:
+
+**macOS / Linux:**
+
+```bash
+rm -rf ~/Desktop/workshop-lab-2a
 ```
 
-> **Windows:** `Remove-Item ec2-trust-policy.json`
+**Windows (PowerShell):**
+
+```powershell
+Remove-Item -Recurse -Force ~\Desktop\workshop-lab-2a
+```
 
 ### Step 5: Verify Cleanup
 

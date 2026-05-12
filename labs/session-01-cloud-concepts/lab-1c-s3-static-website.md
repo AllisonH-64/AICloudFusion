@@ -61,7 +61,7 @@ Here are the placeholders you will use in this lab:
 | Placeholder | What to Replace It With | Example |
 |-------------|------------------------|---------|
 | `<YOUR_PROFILE_NAME>` | Your AWS CLI profile name from Lab 1A | `AdministratorAccess-123456789012` |
-| `<YOUR_UNIQUE_BUCKET_NAME>` | A globally unique name for your S3 bucket (see Step 2 for naming rules) | `jane-doe-cloud-workshop-site` |
+| `<YOUR_UNIQUE_BUCKET_NAME>` | A globally unique name for your S3 bucket (see Step 3 for naming rules) | `jane-doe-cloud-workshop-site` |
 
 ---
 
@@ -93,7 +93,53 @@ aws sts get-caller-identity
 
 ---
 
-### Step 2: Create an S3 Bucket
+### Step 2: Create Your Project Folder
+
+Before creating any files, let's set up a dedicated folder for this lab. This keeps your files organized and ensures your terminal can find them.
+
+**Step 2a: Create the folder**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste:
+
+```powershell
+mkdir ~\Desktop\workshop-lab-1c
+cd ~\Desktop\workshop-lab-1c
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste:
+
+```bash
+mkdir ~/Desktop/workshop-lab-1c
+cd ~/Desktop/workshop-lab-1c
+```
+
+> **What does this do?** Creates a new folder on your Desktop called `workshop-lab-1c` and moves your terminal into that folder. All commands you run and files you create will be in this folder.
+
+**Step 2b: Verify you're in the right folder**
+
+📋 Copy and paste:
+
+**Windows (PowerShell):**
+```powershell
+pwd
+```
+
+**macOS / Linux:**
+```bash
+pwd
+```
+
+**✅ You should see** a path ending in `workshop-lab-1c` (e.g., `C:\Users\YourName\Desktop\workshop-lab-1c` on Windows or `/Users/YourName/Desktop/workshop-lab-1c` on Mac).
+
+> **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here. This is where your terminal is looking for files.
+
+---
+
+### Step 3: Create an S3 Bucket
 
 An S3 bucket is where your website files will live. Bucket names must be **globally unique** — no two AWS accounts in the world can have the same bucket name. Use your name or initials to make it unique.
 
@@ -139,13 +185,13 @@ make_bucket: <YOUR_UNIQUE_BUCKET_NAME>
 
 ---
 
-### Step 3: Create Your Website Files
+### Step 4: Create Your Website Files
 
 Now you will create the HTML files for your website. You need two files:
 - `index.html` — your homepage (what visitors see when they go to your site)
 - `error.html` — an error page (what visitors see if they go to a page that does not exist)
 
-**First, create a folder to hold your website files.**
+**First, create a subfolder to hold your website files.**
 
 📋 Copy and paste this command:
 
@@ -153,7 +199,7 @@ Now you will create the HTML files for your website. You need two files:
 mkdir my-website
 ```
 
-**What does this do?** This creates a new folder called `my-website` on your computer where you will save your HTML files.
+**What does this do?** This creates a new folder called `my-website` inside your `workshop-lab-1c` project folder where you will save your HTML files.
 
 ---
 
@@ -193,7 +239,7 @@ mkdir my-website
 </html>
 ```
 
-**Save this file as `index.html` inside the `my-website` folder.**
+**Save this file as `index.html` inside the `my-website` folder** in your `workshop-lab-1c` folder on your Desktop.
 
 > **💡 Feel free to customize!** Change the text to say your name, change the colors, add more content. This is your website — make it yours.
 
@@ -228,7 +274,7 @@ mkdir my-website
 </html>
 ```
 
-**Save this file as `error.html` inside the `my-website` folder.**
+**Save this file as `error.html` inside the `my-website` folder** in your `workshop-lab-1c` folder on your Desktop.
 
 **Your folder should now look like this:**
 
@@ -240,7 +286,7 @@ my-website/
 
 ---
 
-### Step 4: Upload Your Files to S3
+### Step 5: Upload Your Files to S3
 
 Now you will upload both HTML files from your computer to your S3 bucket in the cloud.
 
@@ -278,7 +324,7 @@ upload: my-website/index.html to s3://<YOUR_UNIQUE_BUCKET_NAME>/index.html
 
 ---
 
-### Step 5: Enable Static Website Hosting
+### Step 6: Enable Static Website Hosting
 
 Right now, your bucket is just storing files. You need to tell S3 to serve those files as a website.
 
@@ -304,13 +350,13 @@ aws s3 website s3://<YOUR_UNIQUE_BUCKET_NAME> --index-document index.html --erro
    ```
    http://<YOUR_UNIQUE_BUCKET_NAME>.s3-website-us-east-1.amazonaws.com
    ```
-   📝 **Copy this URL and save it** — you will use it in Step 8.
+   📝 **Copy this URL and save it** — you will use it in Step 9.
 
 > **⚠️ If you try to visit the URL now, you will get a "403 Forbidden" error.** That is expected — the bucket is still private. We need to make it public in the next two steps.
 
 ---
 
-### Step 6: Disable Block Public Access
+### Step 7: Disable Block Public Access
 
 By default, S3 **blocks all public access** to protect your data. This is a safety feature — you would not want someone accidentally making sensitive files public. But since we are intentionally creating a public website, we need to turn off these protections.
 
@@ -338,7 +384,7 @@ aws s3api put-public-access-block --bucket <YOUR_UNIQUE_BUCKET_NAME> --public-ac
 
 ---
 
-### Step 7: Add a Bucket Policy for Public Read Access
+### Step 8: Add a Bucket Policy for Public Read Access
 
 Now you need to tell S3 **who** is allowed to access your files. You will create a **bucket policy** — a JSON file that defines the access rules.
 
@@ -366,7 +412,7 @@ Now you need to tell S3 **who** is allowed to access your files. You will create
 > "Resource": "arn:aws:s3:::jane-doe-cloud-workshop-site/*"
 > ```
 
-3. **Save the file as `bucket-policy.json`** in the same folder where you are running your terminal commands (not inside the `my-website` folder).
+3. **Save the file as `bucket-policy.json`** in your `workshop-lab-1c` folder on your Desktop (not inside the `my-website` folder).
 
 > **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
 
@@ -401,7 +447,7 @@ aws s3api put-bucket-policy --bucket <YOUR_UNIQUE_BUCKET_NAME> --policy file://b
 
 ---
 
-### Step 8: Visit Your Website! 🎉
+### Step 9: Visit Your Website! 🎉
 
 Your website is now live on the internet. The URL follows this pattern:
 
@@ -461,8 +507,8 @@ The SAA exam frequently tests S3 concepts: storage classes, bucket policies, sta
 | Issue | What It Means | How to Fix It |
 |-------|--------------|---------------|
 | `BucketAlreadyExists` when creating the bucket | Someone else in the world already has a bucket with that name | Choose a different name — add numbers or your initials |
-| `403 Forbidden` when visiting the website URL | The bucket is still private — the policy was not applied correctly | Make sure you completed **both** Step 6 (disable Block Public Access) **and** Step 7 (add bucket policy). Open `bucket-policy.json` and verify the bucket name in the `Resource` line is correct. |
-| Website shows XML instead of HTML | You are using the wrong URL format | Make sure you are using the **website endpoint** (contains `s3-website-us-east-1`), **not** the S3 API endpoint (contains `s3.amazonaws.com`). The correct URL is in Step 8. |
+| `403 Forbidden` when visiting the website URL | The bucket is still private — the policy was not applied correctly | Make sure you completed **both** Step 7 (disable Block Public Access) **and** Step 8 (add bucket policy). Open `bucket-policy.json` and verify the bucket name in the `Resource` line is correct. |
+| Website shows XML instead of HTML | You are using the wrong URL format | Make sure you are using the **website endpoint** (contains `s3-website-us-east-1`), **not** the S3 API endpoint (contains `s3.amazonaws.com`). The correct URL is in Step 9. |
 | `NoSuchBucket` error | The bucket name in your command does not match your actual bucket | Double-check your bucket name — it must match exactly (case-sensitive, no extra spaces). |
 | Files uploaded but website shows old content | Your browser may be caching the old version | Press **Ctrl+Shift+R** (Windows) or **Cmd+Shift+R** (Mac) to hard-refresh the page. |
 
@@ -526,26 +572,24 @@ aws s3 ls s3://<YOUR_UNIQUE_BUCKET_NAME>
 
 ### Step 4: Try Visiting Your Website URL Again
 
-Go back to your browser and refresh the website URL from Step 8.
+Go back to your browser and refresh the website URL from Step 9.
 
 **✅ You should see an error page** (like "404 Not Found" or a generic S3 error) — this confirms your website is no longer live.
 
 ### Step 5: Delete Local Files
 
-Remove the temporary files you created on your computer:
+Remove the project folder you created for this lab:
 
 **macOS / Linux:**
 
 ```bash
-rm bucket-policy.json
-rm -r my-website
+rm -rf ~/Desktop/workshop-lab-1c
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-Remove-Item bucket-policy.json
-Remove-Item -Recurse -Force my-website
+Remove-Item -Recurse -Force ~\Desktop\workshop-lab-1c
 ```
 
 ---

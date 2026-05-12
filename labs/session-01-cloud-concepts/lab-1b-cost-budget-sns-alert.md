@@ -67,7 +67,7 @@ Here are the placeholders you will use in this lab:
 | `<YOUR_PROFILE_NAME>` | Your AWS CLI profile name from Lab 1A | `AdministratorAccess-123456789012` |
 | `<YOUR_ACCOUNT_ID>` | Your 12-digit AWS account number | `123456789012` |
 | `<YOUR_EMAIL_ADDRESS>` | An email address you can check right now | `jane.doe@gmail.com` |
-| `<YOUR_TOPIC_ARN>` | The TopicArn value returned in Step 2 (you will get this during the lab) | `arn:aws:sns:us-east-1:123456789012:workshop-budget-alert` |
+| `<YOUR_TOPIC_ARN>` | The TopicArn value returned in Step 3 (you will get this during the lab) | `arn:aws:sns:us-east-1:123456789012:workshop-budget-alert` |
 
 ---
 
@@ -101,7 +101,53 @@ aws sts get-caller-identity
 
 ---
 
-### Step 2: Create an SNS Topic (Your Notification Channel)
+### Step 2: Create Your Project Folder
+
+Before creating any files, let's set up a dedicated folder for this lab. This keeps your files organized and ensures your terminal can find them.
+
+**Step 2a: Create the folder**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste:
+
+```powershell
+mkdir ~\Desktop\workshop-lab-1b
+cd ~\Desktop\workshop-lab-1b
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste:
+
+```bash
+mkdir ~/Desktop/workshop-lab-1b
+cd ~/Desktop/workshop-lab-1b
+```
+
+> **What does this do?** Creates a new folder on your Desktop called `workshop-lab-1b` and moves your terminal into that folder. All commands you run and files you create will be in this folder.
+
+**Step 2b: Verify you're in the right folder**
+
+📋 Copy and paste:
+
+**Windows (PowerShell):**
+```powershell
+pwd
+```
+
+**macOS / Linux:**
+```bash
+pwd
+```
+
+**✅ You should see** a path ending in `workshop-lab-1b` (e.g., `C:\Users\YourName\Desktop\workshop-lab-1b` on Windows or `/Users/YourName/Desktop/workshop-lab-1b` on Mac).
+
+> **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here. This is where your terminal is looking for files.
+
+---
+
+### Step 3: Create an SNS Topic (Your Notification Channel)
 
 First, we will create an SNS topic. This is the "mailing list" that will receive budget alerts and forward them to your email.
 
@@ -139,7 +185,7 @@ aws sns create-topic --name workshop-budget-alert --region us-east-1
 
 ---
 
-### Step 3: Subscribe Your Email to the Topic
+### Step 4: Subscribe Your Email to the Topic
 
 Now we will add your email address to the topic so you receive notifications.
 
@@ -172,17 +218,17 @@ aws sns subscribe --topic-arn <YOUR_TOPIC_ARN> --protocol email --notification-e
 
 ---
 
-### Step 4: Confirm Your Email Subscription
+### Step 5: Confirm Your Email Subscription
 
 AWS just sent a confirmation email to the address you provided. You need to click the link in that email to activate the subscription.
 
-1. **Open your email inbox** (check the address you used in Step 3)
+1. **Open your email inbox** (check the address you used in Step 4)
 2. **Look for an email** from **AWS Notifications** with the subject "AWS Notification - Subscription Confirmation"
 3. **Check your spam/junk folder** if you do not see it in your inbox
 4. **Click the "Confirm subscription" link** in the email
 5. A web page will open confirming your subscription is active
 
-> **⏳ If the email has not arrived after 2–3 minutes**, check your spam folder. If it is still not there, go back to Step 3 and run the subscribe command again.
+> **⏳ If the email has not arrived after 2–3 minutes**, check your spam folder. If it is still not there, go back to Step 4 and run the subscribe command again.
 
 **✅ Checkpoint — Verify in the AWS Console:**
 1. Go back to the AWS Console → **SNS** → **Subscriptions** (in the left sidebar)
@@ -191,7 +237,7 @@ AWS just sent a confirmation email to the address you provided. You need to clic
 
 ---
 
-### Step 5: Create the Budget Definition File
+### Step 6: Create the Budget Definition File
 
 AWS Budgets needs a configuration file that describes your budget. You will create a small JSON file (a structured text file that AWS can read).
 
@@ -211,7 +257,7 @@ AWS Budgets needs a configuration file that describes your budget. You will crea
 }
 ```
 
-3. **Save the file as `budget.json`** in the same folder where you are running your terminal commands.
+3. **Save the file as `budget.json`** in your `workshop-lab-1b` folder on your Desktop.
 
 > **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
 
@@ -229,13 +275,13 @@ AWS Budgets needs a configuration file that describes your budget. You will crea
 
 ---
 
-### Step 6: Create the Notification Configuration File
+### Step 7: Create the Notification Configuration File
 
 Now create a second file that tells AWS Budgets **when** to send an alert and **where** to send it.
 
 1. Open your text editor and create a **new file**.
 
-2. 📋 Copy and paste this entire block into the file, **replacing `<YOUR_TOPIC_ARN>`** with the TopicArn you saved in Step 2:
+2. 📋 Copy and paste this entire block into the file, **replacing `<YOUR_TOPIC_ARN>`** with the TopicArn you saved in Step 3:
 
 ```json
 [
@@ -256,7 +302,7 @@ Now create a second file that tells AWS Budgets **when** to send an alert and **
 ]
 ```
 
-3. **Save the file as `notifications.json`** in the same folder where you are running your terminal commands.
+3. **Save the file as `notifications.json`** in your `workshop-lab-1b` folder on your Desktop.
 
 > **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
 
@@ -277,7 +323,7 @@ Now create a second file that tells AWS Budgets **when** to send an alert and **
 
 ---
 
-### Step 7: Create the Budget
+### Step 8: Create the Budget
 
 Now you will create the budget using both JSON files.
 
@@ -319,7 +365,7 @@ aws budgets create-budget --account-id <YOUR_ACCOUNT_ID> --budget file://budget.
 
 ---
 
-### Step 8: Verify the Budget Was Created
+### Step 9: Verify the Budget Was Created
 
 📋 Copy and paste this command, **replacing `<YOUR_ACCOUNT_ID>`**:
 
@@ -369,8 +415,8 @@ This lab covers concepts from the **Cost Optimization** pillar of the AWS Well-A
 | Issue | What It Means | How to Fix It |
 |-------|--------------|---------------|
 | `An error occurred (DuplicateBudgetException)` | A budget with this name already exists | Delete it first: `aws budgets delete-budget --account-id <YOUR_ACCOUNT_ID> --budget-name workshop-monthly-budget` then try again |
-| Confirmation email not received | AWS sent it but it may be in spam | Check your spam/junk folder. Wait 2–3 minutes. If still nothing, run the subscribe command from Step 3 again. |
-| `An error occurred (NotFoundException)` when creating budget | The TopicArn in your notifications.json is wrong | Open `notifications.json` and make sure the `Address` value exactly matches the TopicArn from Step 2. Check for typos or extra spaces. |
+| Confirmation email not received | AWS sent it but it may be in spam | Check your spam/junk folder. Wait 2–3 minutes. If still nothing, run the subscribe command from Step 4 again. |
+| `An error occurred (NotFoundException)` when creating budget | The TopicArn in your notifications.json is wrong | Open `notifications.json` and make sure the `Address` value exactly matches the TopicArn from Step 3. Check for typos or extra spaces. |
 | `An error occurred (InvalidParameterException)` | Something in your JSON file is formatted incorrectly | Make sure you saved the files as `.json` (not `.json.txt`). Open them and verify the content matches the examples exactly. |
 
 ---
@@ -421,20 +467,20 @@ aws sns list-topics --region us-east-1
 1. Go to **AWS Budgets** — confirm `workshop-monthly-budget` is gone
 2. Go to **SNS > Topics** — confirm `workshop-budget-alert` is gone
 
-### Step 4: Delete the JSON Files
+### Step 4: Delete Local Files
 
-Remove the temporary files you created on your computer:
+Remove the project folder you created for this lab:
 
 **macOS / Linux:**
 
 ```bash
-rm budget.json notifications.json
+rm -rf ~/Desktop/workshop-lab-1b
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-Remove-Item budget.json, notifications.json
+Remove-Item -Recurse -Force ~\Desktop\workshop-lab-1b
 ```
 
 ---
