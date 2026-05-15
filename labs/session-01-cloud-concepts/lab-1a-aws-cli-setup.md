@@ -35,8 +35,8 @@ By the end of this lab, you will have a fully configured AWS account with secure
 | Service | What It Is | Cost |
 |---------|-----------|------|
 | AWS Account | Your cloud environment | Free to create |
-| IAM Identity Center | Secure login management | Always Free |
-| AWS Organizations | Groups AWS accounts together | Always Free |
+| IAM Identity Center | Secure login management | Always Free | - This requires AWS Organizations
+| AWS Organizations | Groups AWS accounts together | Always Free | - Enabling this changes Free plan to Paid plan
 | AWS CLI | A program on your computer | Always Free |
 
 **Estimated cost for this lab: $0.00**
