@@ -41,7 +41,7 @@ Work through the labs in order (A → B → C). Each lab includes:
 
 ## Cost
 
-All labs use **Always Free** AWS resources and include cleanup steps at the end. Each lab has a cost notice listing every service used and confirming the estimated cost is $0.00. **Always complete the Cleanup section at the end of each lab** to ensure no resources are left running.
+All new AWS accounts created in **May 2026** will automatically receive **$100 USD** in AWS credits after identity verification. These credits apply to all AWS services and are intended to support students throughout the 3‑month program. Most labs in this program use Always Free AWS resources. Each lab includes a Cost Notice listing every service used and confirming the **estimated cost is $0.00**. Some labs (such as those involving EC2) may run resources that incur minimal cost, but these should not meaningfully impact the $100 credit balance as long as cleanup is completed correctly. **Always complete the Cleanup section** at the end of each lab to ensure no resources are left running. Proper cleanup prevents unnecessary charges and ensures the AWS credits last for the full duration of the program.
 
 ## Need Help?
 
