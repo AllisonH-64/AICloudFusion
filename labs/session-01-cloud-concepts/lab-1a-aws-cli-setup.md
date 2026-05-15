@@ -32,16 +32,16 @@ By the end of this lab, you will have a fully configured AWS account with secure
 
 ## Cost Notice
 
-| Service | What It Is | Cost |
+| Service | What It Is | Cost | 
 |---------|-----------|------|
 | AWS Account | Your cloud environment | Free to create |
-| IAM Identity Center | Secure login management | Always Free | - This requires AWS Organizations
-| AWS Organizations | Groups AWS accounts together | Always Free | - Enabling this changes Free plan to Paid plan
+| IAM Identity Center | Secure login management | Always Free |
+| AWS Organizations | Groups AWS accounts together | Always Free |
 | AWS CLI | A program on your computer | Always Free |
 
 **Estimated cost for this lab: $0.00**
 
-> **💰 Important note about costs:** When you create your AWS account, you will select the **Paid plan**. This does NOT mean you will be charged. It means you have access to all AWS services, and you only pay for what you use. All labs in this program use **Always Free** resources and include cleanup steps, so your bill should remain $0.00. You will also set up a cost budget alert in Lab 1B to monitor this.
+> **💰 Important note about costs:** When you create your AWS account, you will select the **Paid plan**. This does NOT mean you will be charged. It means you have access to all AWS services, and you only pay for what you use. All labs in this program use **Always Free** resources and include cleanup steps, so your bill should remain $0.00. You will also set up a cost budget alert in Lab 1B to monitor this.  **Note** To use IAM Identity Center will require creating an AWS Organization which will automatically change a plan from Free to Paid.
 
 ---
 
