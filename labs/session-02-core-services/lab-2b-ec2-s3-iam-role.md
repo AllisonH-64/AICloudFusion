@@ -30,14 +30,14 @@ This is a real-world pattern — applications running on EC2 frequently need to 
 
 ## Cost Notice
 
-| Service | What It Is | Free Tier Limit |
+| Service | What It Is | Credits Needed |
 |---------|-----------|----------------|
-| Amazon EC2 (t2.micro) | Virtual server | 750 hours/month free for 12 months |
-| Amazon S3 | Cloud storage | 5 GB storage free for 12 months |
+| Amazon EC2 (t3.nano) | Virtual server | 0.0052 per hour |
+| Amazon S3 | Cloud storage | 0.023 per GB |
 | AWS Systems Manager | Remote connection | Always Free |
 | IAM | Access management | Always Free |
 
-**Estimated cost for this lab: $0.00**
+**Estimated cost for this lab if you run your ec2 instance for a WHOLE month and never use more than 1GB of storage: $3.77**
 
 ---
 
@@ -216,7 +216,7 @@ aws iam add-role-to-instance-profile --instance-profile-name workshop-ec2-s3-pro
 **Windows (PowerShell):**
 
 ```powershell
-aws ec2 run-instances --image-id <AMI_ID> --instance-type t2.micro --iam-instance-profile Name=workshop-ec2-s3-profile --region us-east-1 --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=workshop-s3-access}]" --query "Instances[0].InstanceId" --output text
+aws ec2 run-instances --image-id <AMI_ID> --instance-type t3.nano --iam-instance-profile Name=workshop-ec2-s3-profile --region us-east-1 --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=workshop-s3-access}]" --query "Instances[0].InstanceId" --output text
 ```
 
 **macOS / Linux:**
@@ -224,7 +224,7 @@ aws ec2 run-instances --image-id <AMI_ID> --instance-type t2.micro --iam-instanc
 ```bash
 aws ec2 run-instances \
     --image-id <AMI_ID> \
-    --instance-type t2.micro \
+    --instance-type t3.nano \
     --iam-instance-profile Name=workshop-ec2-s3-profile \
     --region us-east-1 \
     --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=workshop-s3-access}]' \
