@@ -13,7 +13,7 @@ In this lab, you will launch a **virtual server** on AWS using Amazon EC2 (Elast
 
 **What you will do:**
 - Create an IAM role so the server can communicate with AWS services
-- Launch the smallest free tier EC2 instance available. During lab launch that would have been t2.micro (free tier eligible)
+- Launch the smallest EC2 instance available which would be the t3.nano. (May 2026)
 - Connect to it using Session Manager (a browser-based terminal)
 - Explore the instance (check OS, memory, disk)
 - Terminate the instance and verify it's gone
@@ -31,11 +31,13 @@ In this lab, you will launch a **virtual server** on AWS using Amazon EC2 (Elast
 
 | Service | What It Is | Free Tier Limit |
 |---------|-----------|----------------|
-| Amazon EC2 (eg. t2.micro) | Virtual server | 750 hours/month free for 12 months |
+| Amazon EC2 (eg. t3.nano) | Virtual server | $0.0052/hr **credits buffer needed** |
 | AWS Systems Manager (Session Manager) | Remote connection to instances | Always Free |
 | IAM | Identity and access management | Always Free |
 
-**Estimated cost for this lab: $0.00** (t2.micro is free tier eligible, and we terminate it at the end)
+**Estimated cost for this lab if you run the instance for a month: $3.7960/mo**
+
+You shouldn't be reaching this as we are deleteing resources after each use.
 
 ---
 
@@ -43,7 +45,7 @@ In this lab, you will launch a **virtual server** on AWS using Amazon EC2 (Elast
 
 **Amazon EC2 (Elastic Compute Cloud)** is a service that lets you rent virtual servers in the cloud. Each server is called an **instance**. You choose the size (how much CPU and memory), the operating system, and the region. It's like renting a computer that lives in an AWS data center — you can connect to it, install software, run applications, and delete it when you're done.
 
-**Instance type** describes the size of the server. `t2.micro` is the smallest currently — 1 CPU, 1 GB memory. It's free tier eligible and perfect for learning.
+**Instance type** describes the size of the server. `t3.nano` is the smallest currently — 2 vCPU, 0.5 GB memory and perfect for learning.
 
 **AMI (Amazon Machine Image)** is the operating system template. We will use **Amazon Linux 2023** — a Linux distribution made by AWS that comes with useful tools pre-installed.
 
@@ -218,7 +220,7 @@ Now launch your virtual server. 📋 Copy and paste this command, **replacing `<
 ```bash
 aws ec2 run-instances \
     --image-id <AMI_ID> \
-    --instance-type t2.micro \
+    --instance-type t3.nano \
     --iam-instance-profile Name=workshop-ec2-ssm-profile \
     --region us-east-1 \
     --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=workshop-session2}]' \
@@ -229,12 +231,12 @@ aws ec2 run-instances \
 **Windows (PowerShell):**
 
 ```powershell
-aws ec2 run-instances --image-id <AMI_ID> --instance-type t2.micro --iam-instance-profile Name=workshop-ec2-ssm-profile --region us-east-1 --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=workshop-session2}]" --query "Instances[0].InstanceId" --output text
+aws ec2 run-instances --image-id <AMI_ID> --instance-type t3.nano --iam-instance-profile Name=workshop-ec2-ssm-profile --region us-east-1 --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=workshop-session2}]" --query "Instances[0].InstanceId" --output text
 ```
 
 > **What does this do?**
 > - `--image-id` — which operating system to use (Amazon Linux 2023)
-> - `--instance-type t2.micro` — the smallest (and free) server size
+> - `--instance-type t3.nano` — the smallest server size
 > - `--iam-instance-profile` — attaches the role so Session Manager works
 > - `--tag-specifications` — gives the instance a name so you can find it in the console
 > - `--query` / `--output text` — returns just the instance ID
@@ -317,7 +319,7 @@ cat /etc/os-release
 ```bash
 free -h
 ```
-> You should see about 1 GB (this is a t2.micro)
+> You should see about 1 GB (this is a t3.nano)
 
 **Check disk space:**
 ```bash
@@ -357,7 +359,7 @@ Back on your local terminal, let's check the instance details:
 aws ec2 describe-instances --instance-ids <YOUR_INSTANCE_ID> --region us-east-1 --query "Reservations[0].Instances[0].{State:State.Name,Type:InstanceType,AZ:Placement.AvailabilityZone,PublicIP:PublicIpAddress,LaunchTime:LaunchTime}" --output table
 ```
 
-**✅ You should see** a table showing the instance is `running`, type `t2.micro`, with an availability zone and public IP.
+**✅ You should see** a table showing the instance is `running`, type `t3.nano`, with an availability zone and public IP.
 
 ---
 
@@ -366,12 +368,12 @@ aws ec2 describe-instances --instance-ids <YOUR_INSTANCE_ID> --region us-east-1 
 You launched a **virtual server in the cloud** — the same operation that cloud engineers, DevOps engineers, and SREs perform daily. You:
 
 1. Created an IAM role with Session Manager permissions
-2. Launched a t2.micro EC2 instance with Amazon Linux 2023
+2. Launched a t3.nano EC2 instance with Amazon Linux 2023
 3. Connected to it remotely using Session Manager (no SSH keys needed)
 4. Explored the server's OS, memory, and disk
 5. Viewed instance details from the CLI
 
-In a real job, you would use EC2 instances to run web applications, databases, batch processing jobs, and more. The t2.micro you launched is the same type of server — just smaller — that powers production workloads at companies worldwide.
+In a real job, you would use EC2 instances to run web applications, databases, batch processing jobs, and more. The t3.nano you launched is the same type of server — just smaller — that powers production workloads at companies worldwide.
 
 ---
 
@@ -398,7 +400,7 @@ EC2 is one of the most heavily tested services on the SAA exam. Understanding in
 
 ## Cleanup
 
-**⚠️ Important:** Always terminate EC2 instances when you're done. A running instance uses free tier hours.
+**⚠️ Important:** Always terminate EC2 instances when you're done. A running instance uses credits.
 
 ### Step 1: Terminate the Instance
 
