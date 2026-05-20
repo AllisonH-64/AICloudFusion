@@ -51,7 +51,7 @@ Previously, all labs in this program were designed to use **Always Free resource
 
 While there is a workaround to remain on the free tier by using personal IAM user settings, this approach is rarely used in real-world company environments, is less secure, and does not align with the project’s goal of providing practical, hands‑on experience.  
 
-The estimated costs of the labs are relatively small compared to the value of the skills you’ll gain (Session 2 for example will cost you 3 USD that month if you forget to clean up your EC2 isntance and it is left running for the whole month), but it is important to be aware of them. Each lab write‑up will now include the **associated monthly cost estimates** so you can plan accordingly.
+The estimated costs of the labs are relatively small compared to the value of the skills you’ll gain (_Session 2 for example will cost you $3.00 USD that month if you forget to clean up your EC2 isntance and it is left running for the whole month_), but it is important to be aware of them. Each lab write‑up will now include the **associated monthly cost estimates** so you can plan accordingly.
 
 ---
 
