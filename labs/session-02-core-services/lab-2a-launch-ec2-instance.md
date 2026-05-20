@@ -35,7 +35,7 @@ In this lab, you will launch a **virtual server** on AWS using Amazon EC2 (Elast
 | AWS Systems Manager (Session Manager) | Remote connection to instances | Always Free |
 | IAM | Identity and access management | Always Free |
 
-**Estimated cost for this lab if you run the instance for a month: $3.7960/mo**
+**Estimated cost for this lab if you run the EC2 instance for a month: $3.7960/mo**
 
 You shouldn't be reaching this as we are deleteing resources after each use.
 
