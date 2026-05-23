@@ -75,10 +75,12 @@ This is a real-world architecture pattern — serverless web applications that p
 
 Check if your session is still active:
 
+**Note-** You are following on the env file and profile name created in Lab 1a.
+
 **Windows (PowerShell):**
 
 ```powershell
-aws sts get-caller-identity --profile <YOUR_PROFILE_NAME>"
+aws sts get-caller-identity --profile <YOUR_PROFILE_NAME>
 ```
 
 **macOS / Linux:**
