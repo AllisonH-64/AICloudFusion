@@ -39,7 +39,7 @@ By the end of this lab, you will understand how real organizations implement rol
 | IAM | Identity and Access Management | Always Free |
 | Amazon S3 | Storage for CloudTrail logs | 0.023 per GB |
 
-**Estimated cost for this lab: $0.023**
+**Estimated cost for this lab: $0.00** - As you would have already created buckets from previous labs.
 
 ---
 
