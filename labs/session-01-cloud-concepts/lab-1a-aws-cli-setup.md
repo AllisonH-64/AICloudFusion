@@ -414,7 +414,8 @@ aws configure sso
 **The terminal will ask you questions one at a time. Here is exactly what to type:**
 
 | The terminal shows this prompt | What you type and press Enter |
-|-------------------------------|-------------------------------|
+|-------------------------------|
+-------------------------------|
 | `SSO session name (Recommended):` | `my-sso` |
 | `SSO start URL [None]:` | **Paste your AWS access portal URL** from Step 11 |
 | `SSO region [None]:` | `us-east-1` |
