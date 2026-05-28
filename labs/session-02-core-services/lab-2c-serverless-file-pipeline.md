@@ -37,7 +37,7 @@ This is a real-world architecture pattern — serverless web applications that p
 
 | Service | What It Is | Credits Needed |
 |---------|-----------|----------------|
-| AWS Lambda | Serverless compute | 1 million requests/month Always Free |
+| AWS Lambda | Serverless compute | 1 million requests/month Free |
 | Amazon S3 | Cloud storage + website hosting | 0.023 per GB |
 | Lambda Function URLs | Public HTTP endpoint for Lambda | Included with Lambda free tier |
 | IAM | Access management | Always Free |
@@ -84,6 +84,39 @@ $env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```bash
 export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```
+
+We do this to setup the AWS profile name so you don't have to call --profile <YOUR_PROFILE_NAME> after every aws command listed below. Else you would get credentials error.
+
+### Step 1b: Connect your CLI to AWS via SSO
+
+Check if your session is still active:
+
+**Note-** You are following on the env file and profile name created in Lab 1a.
+
+**Windows (PowerShell):**
+
+```powershell
+aws sts get-caller-identity
+```
+
+**macOS / Linux:**
+
+```bash
+aws sts get-caller-identity
+```
+If you are starting a new terminal instance or the session has expired you will get this error:
+
+> aws: [ERROR]: Error when retrieving token from sso: Token has expired and refresh failed
+
+This is ok. Follow the next step.
+
+Connect to AWS via SSO:
+**Windows (PowerShell) & Linux/macOS:**
+
+```
+aws sso login
+```
+A new browser should open either authorizating the access (*if you are already logged into the console*) ,or requesting you to log into the console before authorizing the connection.
 
 ---
 
@@ -492,7 +525,7 @@ aws lambda create-function \
 
 ---
 
-### Step 7: Create a Function URL for the Presign Lambda
+### Step 7: Create a Function URL for the Presign Lambda and InvokeFunction Permission
 
 This gives the presign function a public URL that the web page can call.
 
@@ -517,6 +550,12 @@ aws lambda create-function-url-config --function-name workshop-presign --auth-ty
 ```
 aws lambda add-permission --function-name workshop-presign --statement-id FunctionURLAllowPublicAccess --action lambda:InvokeFunctionUrl --principal "*" --function-url-auth-type NONE --region us-east-1
 ```
+
+```
+aws lambda add-permission --function-name workshop-presign --statement-id AllowPublicInvoke --action lambda:InvokeFunction --principal "*" --region us-east-1
+```
+
+**lambda:InvokeFunction is the general "run this function" permission — Lambda Function URLs require both: InvokeFunctionUrl to authorize the URL endpoint itself, and InvokeFunction to actually execute the function behind it. Without both granted to '*', public access is denied.**
 
 > **⏳ Wait 1–2 minutes** for the permission to propagate before testing.
 

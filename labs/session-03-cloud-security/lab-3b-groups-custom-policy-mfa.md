@@ -28,7 +28,7 @@ By the end of this lab, you will understand how groups simplify permission manag
 - ✅ Completed **Lab 3A** (familiar with IAM users and policies)
 - ✅ AWS CLI authenticated — run `aws sts get-caller-identity` and confirm it returns your account info
 - ✅ A text editor to create JSON files (VS Code, Notepad, or any editor)
-- ✅ A smartphone with an authenticator app installed (Google Authenticator, Authy, or Microsoft Authenticator) — needed for the MFA section
+- ✅ A smartphone with an authenticator app installed (Google Authenticator, Authy, or Microsoft Authenticator) — needed for the MFA section (MFA should have been done since Session 1, but is important enough in Security to revisit for those who ignored that step.)
 
 ---
 
@@ -40,7 +40,7 @@ By the end of this lab, you will understand how groups simplify permission manag
 | Amazon S3 | Cloud storage for files | 0.023 per GB |
 | MFA | Multi-Factor Authentication | Always Free |
 
-**Estimated cost for this lab: $0.023**
+**Estimated cost for this lab: $0.00** - As you would have already created buckets from previous labs.
 
 ---
 
