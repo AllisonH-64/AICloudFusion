@@ -82,7 +82,11 @@ $env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
 export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```
 
-Verify: `aws sts get-caller-identity`
+**Verify it works.** 📋 Copy and paste:
+
+```
+aws sts get-caller-identity
+```
 
 **✅ You should see** your account ID and role. If you get an error about an expired token, run `aws sso login --profile <YOUR_PROFILE_NAME>`
 
