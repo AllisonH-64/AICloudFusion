@@ -37,7 +37,7 @@ This is a real-world pattern — applications running on EC2 frequently need to 
 | AWS Systems Manager | Remote connection | Always Free |
 | IAM | Access management | Always Free |
 
-**Estimated cost for this lab if you run your ec2 instance for a WHOLE month and never use more than 1GB of storage: $3.79**
+**Estimated cost for this lab is 0.02**
 
 ---
 
@@ -78,6 +78,13 @@ $env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
 export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```
 
+**Verify it works.** 📋 Copy and paste:
+
+```
+aws sts get-caller-identity
+```
+
+**✅ You should see** your account ID and role. If you get an error about an expired token, run `aws sso login --profile <YOUR_PROFILE_NAME>`
 ---
 
 ### Step 2: Create Your Project Folder
