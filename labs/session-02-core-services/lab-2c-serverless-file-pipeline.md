@@ -42,7 +42,7 @@ This is a real-world architecture pattern — serverless web applications that p
 | Lambda Function URLs | Public HTTP endpoint for Lambda | Included with Lambda free tier |
 | IAM | Access management | Always Free |
 
-**Estimated cost for this lab: $0.03 for 1 month**
+**Estimated cost for this lab: $0.02**
 
 ---
 
@@ -93,17 +93,10 @@ Check if your session is still active:
 
 **Note-** You are following on the env file and profile name created in Lab 1a.
 
-**Windows (PowerShell):**
-
-```powershell
+```
 aws sts get-caller-identity
 ```
 
-**macOS / Linux:**
-
-```bash
-aws sts get-caller-identity
-```
 If you are starting a new terminal instance or the session has expired you will get this error:
 
 > aws: [ERROR]: Error when retrieving token from sso: Token has expired and refresh failed
