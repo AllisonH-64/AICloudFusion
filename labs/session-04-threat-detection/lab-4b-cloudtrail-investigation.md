@@ -392,7 +392,7 @@ aws cloudtrail lookup-events --max-results 10 --query "Events[].{Time:EventTime,
 📋 Copy and paste:
 
 ```
-aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateUser --query "Events[].{Time:EventTime,User:Username,Source:EventSource}" --output table
+aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=CreateUser --query "Events[].{Time:EventTime,User:Username,Affected:Resources[0].ResourceName}" --output table
 ```
 
 **✅ You should see** the `CreateUser` event — proving that someone created a user, even though that user no longer exists.
@@ -407,7 +407,7 @@ aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,Attribut
 aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=suspicious-user --query "Events[].{Time:EventTime,Name:EventName,Source:EventSource}" --output table
 ```
 
-> **💡 Note:** This searches for events where `suspicious-user` was the **actor** (the one making API calls). Since we created the user but never used their credentials to make calls, this may return empty results. The important thing is that the **creation and deletion** of the user is logged under YOUR username.
+> **💡 Note:** This searches for events where `suspicious-user` was the **actor** (the one making API calls). Since we created the user but never used their credentials to make calls, this will return empty results. The important thing is that the **creation and deletion** of the user is logged under YOUR username.
 
 ---
 
@@ -416,7 +416,7 @@ aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,Attribute
 📋 Copy and paste:
 
 ```
-aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteUser --query "Events[].{Time:EventTime,User:Username,Source:EventSource}" --output table
+aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteUser --query "Events[].{Time:EventTime,User:Username,Affected:Resources[0].ResourceName, Action:EventName}" --output table
 ```
 
 **✅ You should see** the `DeleteUser` event — CloudTrail recorded that someone deleted `suspicious-user`, who did it, and when.
@@ -424,7 +424,7 @@ aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,Attribut
 📋 Copy and paste:
 
 ```
-aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteAccessKey --query "Events[].{Time:EventTime,User:Username,Source:EventSource}" --output table
+aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=DeleteAccessKey --query "Events[].{Time:EventTime,Actor:Username,Affected:Resources[0].ResourceName,Action:EventName}" --output table
 ```
 
 **✅ You should see** the `DeleteAccessKey` event — even though the key is gone, the record of its creation and deletion remains.
