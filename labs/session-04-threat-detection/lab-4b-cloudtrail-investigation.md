@@ -33,11 +33,11 @@ By the end of this lab, you will understand how CloudTrail provides an immutable
 
 | Service | What It Is | Cost |
 |---------|-----------|------|
-| CloudTrail | Audit logging for AWS actions | First trail is Always Free |
-| Amazon S3 | Storage for CloudTrail logs | Free within 5 GB (12-month free tier) |
+| CloudTrail | Audit logging for AWS actions | First active trail is Always Free |
+| Amazon S3 | Storage for CloudTrail logs | 0.023 per GB |
 | IAM | Identity and Access Management | Always Free |
 
-**Estimated cost for this lab: $0.00**
+**Estimated cost for this lab: $0.00** - as you would have already created buckets from previous labs. Make sure your active trail from lab 3c has been deleted.
 
 ---
 
