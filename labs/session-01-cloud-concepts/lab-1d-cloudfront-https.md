@@ -134,7 +134,7 @@ If you see an error about an expired token, run `aws sso login --profile <YOUR_P
 
 ```powershell
 mkdir ~\Desktop\workshop-lab-1d
-cd ~\Desktop\workshop-lab-1d
+cd ~\Desktop\workshop-lab-1d@
 ```
 
 **macOS / Linux:**
@@ -385,7 +385,6 @@ aws s3api delete-bucket-policy --bucket <YOUR_BUCKET_NAME>
     }
   ]
 }
-"@ | Out-File -FilePath cloudfront-bucket-policy.json -Encoding utf8
 ```
 Save file as `cloudfront-bucket-policy.json` in your project folder.
 
