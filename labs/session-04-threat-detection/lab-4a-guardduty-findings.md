@@ -277,9 +277,6 @@ This gives you all finding IDs. Now get details for multiple findings:
 ```
 aws guardduty get-findings --detector-id <DETECTOR_ID> --finding-ids $((aws guardduty list-findings --detector-id <DETECTOR_ID> --region us-east-1 --query "FindingIds[]" --output text).Split()) --region us-east-1 --query "Findings[].{Type:Type,Severity:Severity,Title:Title}" --output table
 ```
-
-> **💡 If the above command does not work on Windows**, use this two-step approach instead:
-
 **✅ You should see** a table showing multiple findings with their severity levels.
 
 ---
