@@ -134,7 +134,7 @@ If you see an error about an expired token, run `aws sso login --profile <YOUR_P
 
 ```powershell
 mkdir ~\Desktop\workshop-lab-1d
-cd ~\Desktop\workshop-lab-1d@
+cd ~\Desktop\workshop-lab-1d
 ```
 
 **macOS / Linux:**
