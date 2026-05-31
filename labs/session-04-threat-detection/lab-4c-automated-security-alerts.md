@@ -267,7 +267,16 @@ EventBridge needs permission to publish messages to your SNS topic. You must add
             "Principal": {
                 "AWS": "arn:aws:iam::<YOUR_ACCOUNT_ID>:root"
             },
-            "Action": "sns:*",
+             "Action": [
+            "SNS:Publish",
+            "SNS:Subscribe",
+            "SNS:Receive",
+            "SNS:GetTopicAttributes",
+            "SNS:SetTopicAttributes",
+            "SNS:AddPermission",
+            "SNS:RemovePermission",
+            "SNS:ListSubscriptionsByTopic"
+            ],
             "Resource": "<TOPIC_ARN>"
         },
         {
