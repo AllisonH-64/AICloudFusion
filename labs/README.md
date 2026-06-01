@@ -6,6 +6,10 @@ Welcome to the AI Cloud Fusion workshop lab guides. These hands-on labs accompan
 
 **New here?** Start with [Lab 1A](session-01-cloud-concepts/lab-1a-aws-cli-setup.md) — it walks you through creating your AWS account and setting up everything you need from scratch. No prior experience required.
 
+## Bookmark
+
+**Next session:** [Lab 1D: Side Quest — HTTPS for Your Static Website with CloudFront](session-01-cloud-concepts/sidequest-lab-1d-cloudfront-https.md)
+
 ## How to Use These Labs
 
 Each session has its own folder containing three labs at different difficulty levels:
