@@ -28,7 +28,6 @@ labs/
 - Every lab has **console checkpoints** so you can verify your work visually in the AWS Console
 - Every lab ends with **cleanup steps** to remove resources and prevent charges
 - Most labs use **Always Free** AWS resources. A few have nominal cents usage.
-- New accounts receive **$100 USD credit** for free, which will act as a buffer.
 
 ## Prerequisites
 

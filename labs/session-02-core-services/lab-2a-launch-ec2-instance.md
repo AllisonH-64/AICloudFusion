@@ -13,7 +13,7 @@ In this lab, you will launch a **virtual server** on AWS using Amazon EC2 (Elast
 
 **What you will do:**
 - Create an IAM role so the server can communicate with AWS services
-- Launch the smallest EC2 instance available which would be the t3.nano. (May 2026)
+- Launch the smallest EC2 instance available which would be the t3a.nano. (May 2026)
 - Connect to it using Session Manager (a browser-based terminal)
 - Explore the instance (check OS, memory, disk)
 - Terminate the instance and verify it's gone
@@ -31,13 +31,13 @@ In this lab, you will launch a **virtual server** on AWS using Amazon EC2 (Elast
 
 | Service | What It Is | Credits Needed |
 |---------|-----------|----------------|
-| Amazon EC2 (eg. t3.nano) | Virtual server | $0.0052/hr |
+| Amazon EC2 (eg. t3a.nano) | Virtual server | $0.0047/hr |
 | AWS Systems Manager (Session Manager) | Remote connection to instances | Always Free |
 | IAM | Identity and access management | Always Free |
 
-**Estimated cost for this lab if you run the EC2 instance for a month: $3.7960/mo**
+**Estimated cost for this lab is 0.01**  
 
-You shouldn't be reaching this as we are deleteing resources after each use.
+If you run the EC2 instance for _a month in error_ you can expect $3.80, which is why we need to be deleting resources after each lab.
 
 ---
 
@@ -45,13 +45,15 @@ You shouldn't be reaching this as we are deleteing resources after each use.
 
 **Amazon EC2 (Elastic Compute Cloud)** is a service that lets you rent virtual servers in the cloud. Each server is called an **instance**. You choose the size (how much CPU and memory), the operating system, and the region. It's like renting a computer that lives in an AWS data center — you can connect to it, install software, run applications, and delete it when you're done.
 
-**Instance type** describes the size of the server. `t3.nano` is the smallest currently — 2 vCPU, 0.5 GB memory and perfect for learning.
+**Instance type** describes the size of the server. `t3a.nano` is the smallest currently — 2 vCPU, 0.5 GB memory and perfect for learning.
 
 **AMI (Amazon Machine Image)** is the operating system template. We will use **Amazon Linux 2023** — a Linux distribution made by AWS that comes with useful tools pre-installed.
 
 **Session Manager** is a way to connect to your instance through your browser or CLI — no SSH keys, no passwords, no open ports needed. It uses the **SSM Agent** (pre-installed on Amazon Linux) to create a secure connection.
 
 **IAM Instance Profile** is a way to give your EC2 instance permissions to use other AWS services. Instead of putting access keys on the server (insecure), you attach a role that grants specific permissions.
+
+**Amazon VPC (Virtual Private Cloud)** is your isolated network inside AWS where your EC2 instances and other resources live. It controls IP ranges, subnets, routing, and security. Every AWS account includes a default VPC in each region. If you launch an EC2 instance without choosing a VPC, AWS automatically places it into that region’s default VPC.
 
 ---
 
@@ -82,7 +84,13 @@ $env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
 export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```
 
-Verify: `aws sts get-caller-identity`
+**Verify it works.** 📋 Copy and paste:
+
+```
+aws sts get-caller-identity
+```
+
+**✅ You should see** your account ID and role. If you get an error about an expired token, run `aws sso login --profile <YOUR_PROFILE_NAME>`
 
 ---
 
@@ -220,7 +228,7 @@ Now launch your virtual server. 📋 Copy and paste this command, **replacing `<
 ```bash
 aws ec2 run-instances \
     --image-id <AMI_ID> \
-    --instance-type t3.nano \
+    --instance-type t3a.nano \
     --iam-instance-profile Name=workshop-ec2-ssm-profile \
     --region us-east-1 \
     --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=workshop-session2}]' \
@@ -231,12 +239,12 @@ aws ec2 run-instances \
 **Windows (PowerShell):**
 
 ```powershell
-aws ec2 run-instances --image-id <AMI_ID> --instance-type t3.nano --iam-instance-profile Name=workshop-ec2-ssm-profile --region us-east-1 --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=workshop-session2}]" --query "Instances[0].InstanceId" --output text
+aws ec2 run-instances --image-id <AMI_ID> --instance-type t3a.nano --iam-instance-profile Name=workshop-ec2-ssm-profile --region us-east-1 --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=workshop-session2}]" --query "Instances[0].InstanceId" --output text
 ```
 
 > **What does this do?**
 > - `--image-id` — which operating system to use (Amazon Linux 2023)
-> - `--instance-type t3.nano` — the smallest server size
+> - `--instance-type t3a.nano` — the smallest server size
 > - `--iam-instance-profile` — attaches the role so Session Manager works
 > - `--tag-specifications` — gives the instance a name so you can find it in the console
 > - `--query` / `--output text` — returns just the instance ID
@@ -319,7 +327,7 @@ cat /etc/os-release
 ```bash
 free -h
 ```
-> You should see about 1 GB (this is a t3.nano)
+> You should see about 1 GB (this is a t3a.nano)
 
 **Check disk space:**
 ```bash
@@ -359,7 +367,7 @@ Back on your local terminal, let's check the instance details:
 aws ec2 describe-instances --instance-ids <YOUR_INSTANCE_ID> --region us-east-1 --query "Reservations[0].Instances[0].{State:State.Name,Type:InstanceType,AZ:Placement.AvailabilityZone,PublicIP:PublicIpAddress,LaunchTime:LaunchTime}" --output table
 ```
 
-**✅ You should see** a table showing the instance is `running`, type `t3.nano`, with an availability zone and public IP.
+**✅ You should see** a table showing the instance is `running`, type `t3a.nano`, with an availability zone and public IP.
 
 ---
 
@@ -368,12 +376,12 @@ aws ec2 describe-instances --instance-ids <YOUR_INSTANCE_ID> --region us-east-1 
 You launched a **virtual server in the cloud** — the same operation that cloud engineers, DevOps engineers, and SREs perform daily. You:
 
 1. Created an IAM role with Session Manager permissions
-2. Launched a t3.nano EC2 instance with Amazon Linux 2023
+2. Launched a t3a.nano EC2 instance with Amazon Linux 2023
 3. Connected to it remotely using Session Manager (no SSH keys needed)
 4. Explored the server's OS, memory, and disk
 5. Viewed instance details from the CLI
 
-In a real job, you would use EC2 instances to run web applications, databases, batch processing jobs, and more. The t3.nano you launched is the same type of server — just smaller — that powers production workloads at companies worldwide.
+In a real job, you would use EC2 instances to run web applications, databases, batch processing jobs, and more. The t3a.nano you launched is the same type of server — just smaller — that powers production workloads at companies worldwide.
 
 ---
 

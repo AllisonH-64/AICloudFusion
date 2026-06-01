@@ -35,7 +35,7 @@ By the end of this lab, you will understand how real organizations implement rol
 
 | Service | What It Is | Cost |
 |---------|-----------|------|
-| CloudTrail | Audit logging for AWS actions | First trail is Always Free |
+| CloudTrail | Audit logging for AWS actions | First active trail is Always Free |
 | IAM | Identity and Access Management | Always Free |
 | Amazon S3 | Storage for CloudTrail logs | 0.023 per GB |
 
@@ -94,6 +94,14 @@ $env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```bash
 export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```
+
+**Re-establish your SSO login**
+
+```
+aws sso login --profile <YOUR_PROFILE_NAME>
+```
+This will open up browser for you to authenticate account.
+
 
 **Verify it works and get your Account ID.** 📋 Copy and paste:
 
@@ -176,7 +184,7 @@ CloudTrail needs permission to write log files to your bucket. You must add a bu
 
 **Step 4a:** Open your text editor and create a **new, empty file**.
 
-**Step 4b:** 📋 Copy and paste this entire block into the file, **replacing `<YOUR_BUCKET_NAME>`** (3 places) and **`<YOUR_ACCOUNT_ID>`** (1 place):
+**Step 4b:** 📋 Copy and paste this entire block into the file, **replacing `<YOUR_BUCKET_NAME>`** (2 places) and **`<YOUR_ACCOUNT_ID>`** (1 place):
 
 ```json
 {
@@ -215,7 +223,7 @@ CloudTrail needs permission to write log files to your bucket. You must add a bu
 
 **Step 4c:** Save the file as `cloudtrail-bucket-policy.json` in your `workshop-lab-3c` folder on your Desktop.
 
-> **⚠️ Common mistakes:** Make sure you replaced `<YOUR_BUCKET_NAME>` in all 3 places and `<YOUR_ACCOUNT_ID>` in 1 place. The account ID must be exactly 12 digits with no dashes or spaces.
+> **⚠️ Common mistakes:** Make sure you replaced `<YOUR_BUCKET_NAME>` in all 2 places and `<YOUR_ACCOUNT_ID>` in 1 place. The account ID must be exactly 12 digits with no dashes or spaces.
 
 > **What does this file do?** It grants the CloudTrail service two permissions:
 > - **GetBucketAcl** — CloudTrail checks that it has permission to write to the bucket before starting
@@ -801,7 +809,7 @@ This lab covers several high-weight exam topics:
 
 | Issue | What It Means | How to Fix It |
 |-------|--------------|---------------|
-| `An error occurred (InsufficientS3BucketPolicyException)` when creating the trail | The bucket policy does not grant CloudTrail permission to write | Open `cloudtrail-bucket-policy.json` and verify: (1) bucket name is correct in all 3 places, (2) account ID is correct, (3) the policy was applied with `put-bucket-policy` |
+| `An error occurred (InsufficientS3BucketPolicyException)` when creating the trail | The bucket policy does not grant CloudTrail permission to write | Open `cloudtrail-bucket-policy.json` and verify: (1) bucket name is correct in all 2 places, (2) account ID is correct, (3) the policy was applied with `put-bucket-policy` |
 | `An error occurred (TrailAlreadyExistsException)` | The trail already exists from a previous attempt | Delete it first: `aws cloudtrail delete-trail --name workshop-audit-trail` then try again |
 | `assume-role` returns an error about permissions | Your admin profile may not have permission to assume roles | Verify you are using your admin profile (`get-caller-identity` should show AdministratorAccess) |
 | `get-caller-identity` still shows the previous role after switching | Env vars were not fully cleared | Make sure you cleared ALL THREE: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, AND `AWS_SESSION_TOKEN`. Close and reopen your terminal if needed. |
