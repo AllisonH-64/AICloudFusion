@@ -533,6 +533,24 @@ The Security Specialty exam tests these concepts heavily:
 
 ---
 
+## Stage Completion Evidence (Required Screenshots)
+
+Capture these screenshots at the end of this stage (Lab 3B):
+
+1. **Console proof of group configuration** (Step 10): IAM group `workshop-s3-readers` showing member user and inline policy in the group view.
+2. **CLI proof of explicit Deny** (Step 8e): terminal showing delete command and `AccessDenied` result.
+3. **MFA enabled confirmation** (Step 11): root account **Security credentials** page showing MFA device status as active/assigned.
+
+Recommended filenames:
+
+- `lab-3b-step10-group-membership-and-policy.png`
+- `lab-3b-step8-delete-denied.png`
+- `lab-3b-step11-mfa-enabled.png`
+
+Tip: For CLI screenshots, include both the command and the returned output in one frame to make review faster.
+
+---
+
 ## Cleanup
 
 **⚠️ Important:** Always clean up resources after completing a lab. Follow these steps in order.

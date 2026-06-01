@@ -519,6 +519,24 @@ The Security Specialty exam heavily tests IAM policies. You need to understand:
 
 ---
 
+## Stage Completion Evidence (Required Screenshots)
+
+Capture these screenshots at the end of this stage (Lab 3A):
+
+1. **CLI proof of denied delete** (Step 8f): terminal showing `aws s3 rm ...` and `AccessDenied`.
+2. **CLI identity proof** (Step 8b or Step 9): terminal output from `aws sts get-caller-identity` showing the active identity.
+3. **Console proof of policy attachment** (Step 10): IAM user `workshop-readonly-user` with inline policy `S3ReadOnlyPolicy` visible in the **Permissions** tab.
+
+Recommended filenames:
+
+- `lab-3a-step8-delete-denied.png`
+- `lab-3a-step8-or-step9-caller-identity.png`
+- `lab-3a-step10-user-policy-console.png`
+
+Tip: Keep your terminal command and the full error/output visible in the same screenshot so it can be used as audit evidence.
+
+---
+
 ## Cleanup
 
 **⚠️ Important:** Always clean up resources after completing a lab. Follow these steps in order.

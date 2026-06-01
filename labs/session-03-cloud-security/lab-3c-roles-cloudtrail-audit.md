@@ -812,6 +812,24 @@ This lab covers several high-weight exam topics:
 
 ---
 
+## Stage Completion Evidence (Required Screenshots)
+
+Capture these screenshots at the end of this stage (Lab 3C):
+
+1. **CLI proof of auditor lookup** (Step 12d): terminal table output from `aws cloudtrail lookup-events ... --output table`.
+2. **CLI proof of denied auditor modification** (Step 12e): terminal showing denied `aws iam create-user ...` attempt.
+3. **Console proof of audit history** (Step 14): CloudTrail **Event history** page showing events such as `AssumeRole`, `PutObject`, and failed `CreateUser`.
+
+Recommended filenames:
+
+- `lab-3c-step12-cloudtrail-lookup-table.png`
+- `lab-3c-step12-auditor-createuser-denied.png`
+- `lab-3c-step14-cloudtrail-event-history.png`
+
+Tip: If events are delayed, wait a few minutes before capturing the CloudTrail history screenshot so key events are visible.
+
+---
+
 ## Cleanup
 
 **⚠️ Important:** Always clean up resources after completing a lab. Follow these steps in order. Make sure you are using your **admin credentials** (not a role).
