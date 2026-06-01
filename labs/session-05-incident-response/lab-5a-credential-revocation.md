@@ -218,6 +218,7 @@ The key is **Active** — it can be used to authenticate API calls.
 
 ### Step 6: 🚨 Simulate Detection
 
+>[!IMPORTANT]
 > **SCENARIO:** You receive an urgent alert from your security team:
 >
 > *"ALERT: AWS access key `AKIA...` belonging to user `compromised-user` was found in a public GitHub repository. The key was committed 15 minutes ago. Automated scanners have likely already harvested it. Immediate action required."*
