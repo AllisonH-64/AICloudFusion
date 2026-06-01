@@ -34,10 +34,10 @@ By the end of this lab, you will understand how to investigate a cloud security 
 | Service | What It Is | Cost |
 |---------|-----------|------|
 | IAM | Identity and Access Management | Always Free |
-| Amazon S3 | Cloud storage for files | Free within 5 GB / 2,000 PUT / 20,000 GET per month (12-month free tier) |
+| Amazon S3 | Cloud storage for files | 0.023 per GB |
 | CloudTrail | Event history (last 90 days) | Always Free (no trail creation needed) |
 
-**Estimated cost for this lab: $0.00**
+**Estimated cost for this lab: $0.00** - S3 buckets created from before.
 
 > **💡 Note:** CloudTrail event history (last 90 days of management events) is always available in every AWS account without creating a trail. You do NOT need to set up a trail for this lab — you can use `lookup-events` directly.
 
