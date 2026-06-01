@@ -45,7 +45,7 @@ By the end of this lab, you will have a fully configured AWS account with secure
 
 When you create your AWS account, you will select the **Paid plan**. This does **not** mean you will be charged immediately—it simply gives you access to all AWS services, and you only pay for what you use.  
 
-Previously, all labs in this program were designed to use **Always Free resources** with cleanup steps to keep your bill at $0.00. You will also set up a **cost budget alert** in Lab 1B to monitor usage and as an additional safeguard to catch resources that weren't cleaned up. 
+Previously, all labs in this program were designed to use **Always Free resources** with cleanup steps to keep your bill as close to $0.00 as possible. You will also set up a **cost budget alert** in Lab 1B to monitor usage and as an additional safeguard to catch resources that weren't cleaned up. 
 
 ⚠️ **Update:** To use **IAM Identity Center**, you must enable **AWS Organizations**. Activating AWS Organizations automatically expires the free credits provided by AWS.  
 
@@ -149,7 +149,7 @@ You will see two options: **Free** and **Paid**.
 
 **Select the Paid plan.**
 
-> **💡 Why Paid and not Free?** The Free plan limits which services you can use and does not allow you to enable IAM Identity Center (the secure login system we need). The Paid plan gives you access to all services, and you only pay for what you use. Since all our labs use Always Free resources and include cleanup steps, your bill will be $0.00. You also receive **$100 in credits** when you sign up, which covers any accidental usage.
+> **💡 Why Paid and not Free?** The Free plan limits which services you can use and does not allow you to enable IAM Identity Center (the secure login system we need). The Paid plan gives you access to all services, and you only pay for what you use. However, we are aiming to use only free services.
 
 ---
 
@@ -170,7 +170,6 @@ You will see two options: **Free** and **Paid**.
 
 **✅ Checkpoint:** Once activated, sign in to the [AWS Management Console](https://console.aws.amazon.com/) using your **root user email** and **password**. You should see the AWS Console homepage.
 
-**In the search bar at the top left, type Billing and Cost Management and select the service. On the left hand menu select Credits and be sure that you have the $100 USD credits available. Do not proceed if you are seeing 0.00 across the screen. Review troubleshooting errors at the bottom of this page first.**
 
 ---
 
@@ -442,6 +441,16 @@ aws configure sso
 > **📝 Write down your profile name:** ______________________________
 >
 > You will need this for every future lab. It looks something like `AdministratorAccess-123456789012`.
+
+
+You are doing a one‑time configuration that creates:
+
+- an SSO session block in ~/.aws/config
+- a profile that points to that SSO session
+- your default region + output format
+
+This configuration persists on disk.
+It does not disappear when you close the terminal, restart your machine, or open a new CLI window.
 
 ---
 
