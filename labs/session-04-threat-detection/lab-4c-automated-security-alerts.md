@@ -35,14 +35,14 @@ By the end of this lab, you will have built an automated security alerting pipel
 ## Cost Notice
 
 | Service | What It Is | Cost |
-|---------|-----------|------|
+| --- | --- | --- |
 | Amazon GuardDuty | Continuous threat detection | **30-day free trial**, then charges based on data analyzed |
 | Amazon EventBridge | Event routing service | Free for AWS service events |
 | Amazon SNS | Notification service | Free within 1,000 email notifications/month |
 
-**Estimated cost for this lab: $0.00**
+**Estimated cost:** $0.00
 
-**⚠️ Important:** You MUST delete the GuardDuty detector in the cleanup section to avoid charges after your 30-day free trial ends.
+**⚠️ Important:** Only delete the GuardDuty detector in the cleanup section if you created it in this lab. If you reuse an existing detector, leave it enabled unless you are certain it was only created for practice.
 
 ---
 
@@ -73,7 +73,7 @@ Commands are inside gray code boxes. **📋 Copy and paste** them into your term
 Here are the placeholders you will use in this lab:
 
 | Placeholder | What to Replace It With | Example |
-|-------------|------------------------|---------|
+| --- | --- | --- |
 | `<YOUR_PROFILE_NAME>` | Your AWS CLI profile name from Lab 1A | `AdministratorAccess-123456789012` |
 | `<YOUR_ACCOUNT_ID>` | Your 12-digit AWS account ID (from `aws sts get-caller-identity`) | `123456789012` |
 | `<DETECTOR_ID>` | The GuardDuty detector ID (from Step 4) | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6` |
@@ -102,7 +102,7 @@ export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 
 **Verify it works and get your Account ID.** 📋 Copy and paste:
 
-```
+```text
 aws sts get-caller-identity
 ```
 
@@ -114,7 +114,7 @@ aws sts get-caller-identity
 
 ### Step 2: Create Your Project Folder
 
-**Step 2a: Create the folder**
+#### Step 2a: Create the folder
 
 **Windows (PowerShell):**
 
@@ -136,11 +136,11 @@ cd ~/Desktop/workshop-lab-4c
 
 > **What does this do?** Creates a new folder on your Desktop called `workshop-lab-4c` and moves your terminal into that folder.
 
-**Step 2b: Verify you're in the right folder**
+#### Step 2b: Verify you're in the right folder
 
 📋 Copy and paste:
 
-```
+```text
 pwd
 ```
 
@@ -154,13 +154,15 @@ pwd
 
 📋 Copy and paste:
 
-```
+```text
 aws guardduty list-detectors --region us-east-1
 ```
 
 **✅ If you see** `"DetectorIds": []` (empty list) — GuardDuty is NOT enabled. Continue to Step 4.
 
-**✅ If you see** a detector ID in the list — GuardDuty is already enabled. Write down that detector ID and skip to Step 5.
+**✅ If you see** a detector ID in the list — GuardDuty is already enabled. Write down that detector ID, note that it was **already present before this lab**, and skip to Step 5.
+
+> **Important:** If you reuse an existing detector, do **not** delete it in Cleanup unless you are certain you created it yourself for practice.
 
 ---
 
@@ -168,7 +170,7 @@ aws guardduty list-detectors --region us-east-1
 
 📋 Copy and paste:
 
-```
+```text
 aws guardduty create-detector --enable --region us-east-1
 ```
 
@@ -188,7 +190,7 @@ aws guardduty create-detector --enable --region us-east-1
 
 📋 Copy and paste:
 
-```
+```text
 aws sns create-topic --name workshop-security-alerts --region us-east-1
 ```
 
@@ -201,9 +203,7 @@ aws sns create-topic --name workshop-security-alerts --region us-east-1
 ```
 
 > **📝 Write down your Topic ARN:** ______________________________
->
 > You will need this in several steps below.
-
 > **What does this do?** Creates a notification channel called `workshop-security-alerts`. Think of it as creating a mailing list — anyone subscribed to this topic will receive messages published to it.
 
 ---
@@ -212,14 +212,15 @@ aws sns create-topic --name workshop-security-alerts --region us-east-1
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>` and `<YOUR_EMAIL>`**:
 
-```
+```text
 aws sns subscribe --topic-arn <TOPIC_ARN> --protocol email --notification-endpoint <YOUR_EMAIL> --region us-east-1
 ```
 
-> **🔄 Example:**
-> ```
-> aws sns subscribe --topic-arn arn:aws:sns:us-east-1:123456789012:workshop-security-alerts --protocol email --notification-endpoint jane@example.com --region us-east-1
-> ```
+**Example:**
+
+```text
+aws sns subscribe --topic-arn arn:aws:sns:us-east-1:123456789012:workshop-security-alerts --protocol email --notification-endpoint jane@example.com --region us-east-1
+```
 
 **✅ You should see** JSON output with a `SubscriptionArn` of `"pending confirmation"`.
 
@@ -240,7 +241,7 @@ aws sns subscribe --topic-arn <TOPIC_ARN> --protocol email --notification-endpoi
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>`**:
 
-```
+```text
 aws sns list-subscriptions-by-topic --topic-arn <TOPIC_ARN> --region us-east-1 --query "Subscriptions[].{Endpoint:Endpoint,Protocol:Protocol,Status:SubscriptionArn}" --output table
 ```
 
@@ -292,23 +293,25 @@ EventBridge needs permission to publish messages to your SNS topic. You must add
 }
 ```
 
-> **🔄 Example:** If your topic ARN is `arn:aws:sns:us-east-1:123456789012:workshop-security-alerts` and your account ID is `123456789012`:
-> - `"AWS": "arn:aws:iam::123456789012:root"`
-> - `"Resource": "arn:aws:sns:us-east-1:123456789012:workshop-security-alerts"` (in both places)
+**Example:** If your topic ARN is `arn:aws:sns:us-east-1:123456789012:workshop-security-alerts` and your account ID is `123456789012`:
+
+- `"AWS": "arn:aws:iam::123456789012:root"`
+- `"Resource": "arn:aws:sns:us-east-1:123456789012:workshop-security-alerts"` (in both places)
 
 **Step 8c:** Save the file as `sns-policy.json` in your `workshop-lab-4c` folder on your Desktop.
 
 > **⚠️ Common mistakes:** Make sure you replaced `<TOPIC_ARN>` in BOTH places and `<YOUR_ACCOUNT_ID>` in 1 place.
 
-> **What does this file do?** It grants two permissions:
-> - **AllowAccountToManage** — your account can manage the topic (needed for cleanup)
-> - **AllowEventBridgeToPublish** — the EventBridge service can publish messages to this topic
+**What does this file do?** It grants two permissions:
 
-**Step 8d: Apply the SNS topic policy**
+- **AllowAccountToManage** — your account can manage the topic (needed for cleanup)
+- **AllowEventBridgeToPublish** — the EventBridge service can publish messages to this topic
+
+#### Step 8d: Apply the SNS topic policy
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>`**:
 
-```
+```text
 aws sns set-topic-attributes --topic-arn <TOPIC_ARN> --attribute-name Policy --attribute-value file://sns-policy.json --region us-east-1
 ```
 
@@ -336,20 +339,21 @@ Now you will define which GuardDuty findings should trigger an alert. You will m
 
 **Step 9c:** Save the file as `eventbridge-rule.json` in your `workshop-lab-4c` folder on your Desktop.
 
-> **What does this file do?** It tells EventBridge: "Match any event that comes from GuardDuty, is a finding, and has a severity of 4 or higher." This means:
-> - **Low severity (1–3.9):** Ignored — no alert sent
-> - **Medium severity (4–6.9):** Alert sent ✅
-> - **High severity (7–8.9):** Alert sent ✅
->
-> This prevents alert fatigue from low-priority findings while ensuring you are notified of real threats.
+**What does this file do?** It tells EventBridge: "Match any event that comes from GuardDuty, is a finding, and has a severity of 4 or higher." This means:
 
-> **What does each field mean?**
->
-> | Field | Value | What It Means |
-> |-------|-------|---------------|
-> | `source` | `aws.guardduty` | Only match events from GuardDuty |
-> | `detail-type` | `GuardDuty Finding` | Only match finding events (not configuration changes) |
-> | `detail.severity` | `>= 4` | Only match findings with severity 4 or higher |
+- **Low severity (1–3.9):** Ignored — no alert sent
+- **Medium severity (4–6.9):** Alert sent ✅
+- **High severity (7–8.9):** Alert sent ✅
+
+This prevents alert fatigue from low-priority findings while ensuring you are notified of real threats.
+
+**What does each field mean?**
+
+| Field | Value | What It Means |
+| --- | --- | --- |
+| `source` | `aws.guardduty` | Only match events from GuardDuty |
+| `detail-type` | `GuardDuty Finding` | Only match finding events (not configuration changes) |
+| `detail.severity` | `>= 4` | Only match findings with severity 4 or higher |
 
 ---
 
@@ -357,7 +361,7 @@ Now you will define which GuardDuty findings should trigger an alert. You will m
 
 📋 Copy and paste:
 
-```
+```text
 aws events put-rule --name workshop-guardduty-alert --event-pattern file://eventbridge-rule.json --state ENABLED --region us-east-1
 ```
 
@@ -379,14 +383,15 @@ Now connect the rule to your SNS topic — when the rule matches a finding, it p
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>`**:
 
-```
+```text
 aws events put-targets --rule workshop-guardduty-alert --targets '[{\"Id\":\"sns-target\",\"Arn\":\"<TOPIC_ARN>\"}]' --region us-east-1
 ```
 
-> **🔄 Example:**
-> ```
-> aws events put-targets --rule workshop-guardduty-alert --targets '[{\"Id\":\"sns-target\",\"Arn\":\"arn:aws:sns:us-east-1:123456789012:workshop-security-alerts\"}]' --region us-east-1
-> ```
+**Example:**
+
+```text
+aws events put-targets --rule workshop-guardduty-alert --targets '[{\"Id\":\"sns-target\",\"Arn\":\"arn:aws:sns:us-east-1:123456789012:workshop-security-alerts\"}]' --region us-east-1
+```
 
 **✅ You should see** JSON output with `"FailedEntryCount": 0` — meaning the target was added successfully.
 
@@ -398,20 +403,21 @@ Now generate a high-severity sample finding in GuardDuty to trigger your alert p
 
 📋 Copy and paste, **replacing `<DETECTOR_ID>`**:
 
-```
+```text
 aws guardduty create-sample-findings --detector-id <DETECTOR_ID> --finding-types "CryptoCurrency:EC2/BitcoinTool.B!DNS" --region us-east-1
 ```
 
 **✅ No output means success.**
 
-> **What happens now?**
-> 1. GuardDuty generates a sample finding with high severity (8.0)
-> 2. GuardDuty publishes the finding as an event to EventBridge
-> 3. EventBridge checks the event against your rule (severity >= 4? YES)
-> 4. EventBridge publishes the event to your SNS topic
-> 5. SNS sends an email to your subscribed address
->
-> **⏱️ This may take 2–5 minutes.** Check your email inbox (and spam folder) for a notification from AWS.
+**What happens now?**
+
+1. GuardDuty generates a sample finding with high severity (8.0)
+2. GuardDuty publishes the finding as an event to EventBridge
+3. EventBridge checks the event against your rule (severity >= 4? YES)
+4. EventBridge publishes the event to your SNS topic
+5. SNS sends an email to your subscribed address
+
+**⏱️ This may take 2–5 minutes.** Check your email inbox (and spam folder) for a notification from AWS.
 
 ---
 
@@ -419,22 +425,24 @@ aws guardduty create-sample-findings --detector-id <DETECTOR_ID> --finding-types
 
 1. Check your email inbox for a message from **AWS Notifications**
 2. The email will contain the GuardDuty finding details in JSON format, including:
+
    - The finding type (`CryptoCurrency:EC2/BitcoinTool.B!DNS`)
    - The severity (8.0 — High)
    - A description of the threat
    - The affected resource
 
-> **💡 If you do not receive an email within 5 minutes:**
-> - Check your spam/junk folder
-> - Verify your subscription is confirmed (Step 7)
-> - Try generating another sample finding (repeat Step 12)
-> - Note: Sample findings may not always trigger EventBridge rules in all accounts. The important thing is that you built the pipeline correctly.
+**💡 If you do not receive an email within 5 minutes:**
+
+- Check your spam/junk folder
+- Verify your subscription is confirmed (Step 7)
+- Try generating another sample finding (repeat Step 12)
+- Note: Sample findings may not always trigger EventBridge rules in all accounts. The important thing is that you built the pipeline correctly.
 
 > **💡 What the email looks like:** The email contains raw JSON from the GuardDuty finding event. In a production environment, you would use a Lambda function between EventBridge and SNS to format the message into a human-readable alert with clear action items.
 
-Guardduty has a set behaviour regarding deduplication: If you do a second run (within 24hrs after cleanup), even though you deleted the detector and rebuilt everything, GuardDuty's backend will still have a recent record of that finding type for your account. When you call a create-sample-findings again with the same type, GuardDuty will treated it as an update to the existing finding (incrementing the count, updating the timestamp) rather than creating a new finding event. EventBridge only fires on new finding events, not on updates — so no email will be triggered.
+GuardDuty has built-in deduplication behavior. If you run this lab again within about 24 hours, even after deleting and recreating the detector, GuardDuty may still treat the same sample finding type as an **update** to a recent existing finding instead of creating a brand-new event. That means the finding's count and timestamp change, but EventBridge may not emit a new alert because it triggers on new matching events, not every update.
 
-TLDR: GuardDuty deduplicates findings by type within a time window. This is by design to prevent alert fatigue — a single compromised resource triggering the same behavior 100 times generates one finding (updated), not 100 emails. In a real environment, you'd see the UpdatedAt and Count fields on the finding change, but only the initial detection fires through EventBridge.
+**TL;DR:** GuardDuty deduplicates repeated findings by type within a time window. This is by design to prevent alert fatigue — one compromised resource triggering the same behavior 100 times should not generate 100 separate emails. In a real environment, you would see the `UpdatedAt` and `Count` fields change, but only the initial detection may trigger the EventBridge-to-SNS pipeline.
 
 ---
 
@@ -443,6 +451,7 @@ TLDR: GuardDuty deduplicates findings by type within a time window. This is by d
 Let's verify the pipeline in the AWS Console:
 
 **EventBridge Rule:**
+
 1. Go to [https://console.aws.amazon.com/](https://console.aws.amazon.com/)
 2. Search for **EventBridge** in the top search bar and click it
 3. Click **Rules** in the left sidebar
@@ -450,12 +459,14 @@ Let's verify the pipeline in the AWS Console:
 5. Click on the rule to see the event pattern and target
 
 **SNS Topic:**
+
 1. Search for **SNS** in the top search bar and click it
 2. Click **Topics** in the left sidebar
 3. You should see **workshop-security-alerts**
 4. Click on the topic to see your email subscription
 
 **GuardDuty Findings:**
+
 1. Search for **GuardDuty** in the top search bar and click it
 2. Click **Findings** in the left sidebar
 3. You should see the sample findings with severity indicators
@@ -475,12 +486,13 @@ You built an automated security alerting pipeline:
 This is the foundation of **SOAR (Security Orchestration, Automation, and Response)**:
 
 | SOAR Component | What You Built | Production Version |
-|---------------|---------------|-------------------|
+| --- | --- | --- |
 | **Orchestration** | EventBridge rule matching severity >= 4 | Complex rules matching specific finding types, resources, or accounts |
 | **Automation** | Automatic event routing (no human needed) | Lambda functions that auto-remediate (isolate instances, revoke keys) |
 | **Response** | Email notification to analyst | PagerDuty alerts, Slack messages, JIRA tickets, automated runbooks |
 
 In a real SOC, this pipeline would:
+
 - Send high-severity alerts to PagerDuty (wakes someone up at 3 AM)
 - Send medium-severity alerts to a Slack channel (investigated during business hours)
 - Trigger Lambda functions that automatically isolate compromised resources
@@ -493,6 +505,7 @@ In a real SOC, this pipeline would:
 **Target Certification:** AWS Security Specialty (SCS-C02)
 
 This lab covers several high-weight exam topics:
+
 - **EventBridge event patterns:** How to filter events by source, type, and detail fields
 - **GuardDuty integration:** How GuardDuty findings flow to EventBridge automatically
 - **SNS for security notifications:** Topic policies, subscriptions, and cross-service permissions
@@ -506,7 +519,7 @@ This lab covers several high-weight exam topics:
 ## Troubleshooting
 
 | Issue | What It Means | How to Fix It |
-|-------|--------------|---------------|
+| --- | --- | --- |
 | `An error occurred (InvalidParameterValue)` when creating the rule | The event pattern JSON has a syntax error | Open `eventbridge-rule.json` and verify the JSON is valid. Check for missing commas or brackets. |
 | `put-targets` returns `FailedEntryCount: 1` | EventBridge cannot access the SNS topic | Verify the SNS topic policy was applied correctly (Step 8d). Check that the topic ARN is correct. |
 | Email subscription confirmation not received | Email may be in spam, or the address was typed wrong | Check spam folder. If not there, unsubscribe and re-subscribe with the correct email. |
@@ -524,7 +537,7 @@ This lab covers several high-weight exam topics:
 
 📋 Copy and paste:
 
-```
+```text
 aws events remove-targets --rule workshop-guardduty-alert --ids sns-target --region us-east-1
 ```
 
@@ -534,7 +547,7 @@ aws events remove-targets --rule workshop-guardduty-alert --ids sns-target --reg
 
 📋 Copy and paste:
 
-```
+```text
 aws events delete-rule --name workshop-guardduty-alert --region us-east-1
 ```
 
@@ -546,13 +559,13 @@ First, get the subscription ARN:
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>`**:
 
-```
+```text
 aws sns list-subscriptions-by-topic --topic-arn <TOPIC_ARN> --region us-east-1 --query "Subscriptions[].SubscriptionArn" --output text
 ```
 
 Then unsubscribe (📋 **replacing `<SUBSCRIPTION_ARN>`** with the ARN from above):
 
-```
+```text
 aws sns unsubscribe --subscription-arn <SUBSCRIPTION_ARN> --region us-east-1
 ```
 
@@ -562,7 +575,7 @@ aws sns unsubscribe --subscription-arn <SUBSCRIPTION_ARN> --region us-east-1
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>`**:
 
-```
+```text
 aws sns delete-topic --topic-arn <TOPIC_ARN> --region us-east-1
 ```
 
@@ -570,23 +583,27 @@ aws sns delete-topic --topic-arn <TOPIC_ARN> --region us-east-1
 
 ### Step 5: Delete the GuardDuty Detector
 
-📋 Copy and paste, **replacing `<DETECTOR_ID>`**:
+📋 If you created the detector in Step 4, copy and paste this command, **replacing `<DETECTOR_ID>`**:
 
-```
+```text
 aws guardduty delete-detector --detector-id <DETECTOR_ID> --region us-east-1
 ```
 
 **✅ No output means success.**
 
+> **Skip this step** if you reused a detector that already existed before the lab.
+
 ### Step 6: Verify GuardDuty Is Disabled
 
-📋 Copy and paste:
+📋 If you deleted a detector in Step 5, copy and paste:
 
-```
+```text
 aws guardduty list-detectors --region us-east-1
 ```
 
 **✅ You should see** `"DetectorIds": []` (empty list).
+
+If you reused an existing detector and skipped deletion, it is expected that `list-detectors` still shows that detector ID.
 
 ### Step 7: Delete Local Files
 
@@ -611,6 +628,7 @@ rm -rf ~/Desktop/workshop-lab-4c
 ## Help
 
 If you get stuck, post your question in the **Lab Help** channel on Microsoft Teams. Include:
+
 1. The **step number** you are on
 2. The **command** you ran (copy and paste it)
 3. The **full error message** you received (copy and paste it)
