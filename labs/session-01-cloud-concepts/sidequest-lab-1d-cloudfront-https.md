@@ -216,10 +216,9 @@ This is the full configuration for your CloudFront distribution. You will write 
 
 **Use your text editor (VS Code, Notepad++, etc)**
 
-📋 Copy and paste the entire block, **replacing all four placeholders**:
+📋 Copy and paste the entire block, **replacing placeholders**:
 - `<YOUR_BUCKET_NAME>` — your S3 bucket name
 - `<YOUR_REGION>` — the region your bucket is in (e.g., `us-east-1`)
-- `<YOUR_ACCOUNT_ID>` — your 12-digit account ID
 - `<YOUR_OAC_ID>` — the OAC ID from Step 4b
 
 ```json
@@ -592,10 +591,10 @@ aws cloudfront get-distribution-config --id <YOUR_DIST_ID> --query 'ETag' --outp
 Get the current config and save it to a file:
 
 ```
-aws cloudfront get-distribution-config --id <YOUR_DIST_ID> --query 'DistributionConfig' > current-dist-config.json
+aws cloudfront get-distribution-config --id <YOUR_DIST_ID> --query "DistributionConfig" | Out-File -FilePath current-dist-config.json -Encoding ascii
 ```
 
-Now disable the distribution — open `current-dist-config.json` in a text editor, change `"Enabled": true` to `"Enabled": false`, save, then run:
+Open the newly created `current-dist-config.json` in a text editor, and in the PrideClass codeblock (controls which CloudFront edge locations your distribution will use), change `"Enabled": true` to `"Enabled": false`, save, then run:
 
 📋 Copy and paste, **replacing `<YOUR_DIST_ID>` and `<ETAG>`**:
 
@@ -614,6 +613,12 @@ aws cloudfront get-distribution --id <YOUR_DIST_ID> --query 'Distribution.Status
 ```
 
 Run this every 2 minutes until you see `Deployed` (this means the disable has been deployed). The `Enabled` flag in the config is now `false`.
+
+You can further confirm by running the below command and verify the false variable has been deployed:
+
+```
+aws cloudfront get-distribution --id <YOUR_DIST_ID> --query "{Status:Distribution.Status,Enabled:Distribution.DistributionConfig.Enabled}" --output table
+```
 
 ### Step 3: Delete the Distribution
 
