@@ -12,7 +12,7 @@
 In this lab, you will build a **complete serverless application** — a web page where you can upload text, have it automatically processed by AWS Lambda, and see the result displayed on the page. This ties together everything from Sessions 1 and 2: S3 static website hosting, Lambda functions, IAM roles, S3 event triggers, and presigned URLs.
 
 **What you will build:**
-- A **static website** hosted on S3 (like Lab 1C) with a file upload form
+- A new **"File Processor" page added to your existing Lab 1C website** (with a file upload form), plus a nav link between the two pages
 - A **presign Lambda function** that generates secure upload URLs for the browser
 - A **Lambda Function URL** so the web page can call the presign function
 - An **input S3 bucket** where uploaded files land
@@ -27,22 +27,22 @@ This is a real-world architecture pattern — serverless web applications that p
 ## Prerequisites
 
 - ✅ Completed **Lab 1A** (AWS account, CLI configured)
-- ✅ Familiarity with S3 static website hosting (Lab 1C)
+- ✅ Completed **Lab 1C** and your website is **still live** (you did not run 1C's cleanup) — this lab adds a page to that existing site. Have your **Lab 1C website bucket name** handy.
 - ✅ AWS CLI authenticated
-- ✅ A text editor for creating files
+- ✅ VS Code installed (from Lab 1B)
 
 ---
 
 ## Cost Notice
 
-| Service | What It Is | Credits Needed |
+| Service | What It Is | Cost |
 |---------|-----------|----------------|
-| AWS Lambda | Serverless compute | 1 million requests/month Free |
-| Amazon S3 | Cloud storage + website hosting | 0.023 per GB |
+| AWS Lambda | Serverless compute | 1 million requests/month always free |
+| Amazon S3 | Cloud storage + website hosting | $0.023 per GB/month |
 | Lambda Function URLs | Public HTTP endpoint for Lambda | Included with Lambda free tier |
 | IAM | Access management | Always Free |
 
-**Estimated cost for this lab: $0.02**
+**Estimated cost for this lab: ~$0.02** (effectively $0.00 if you complete the cleanup steps promptly)
 
 ---
 
@@ -64,7 +64,7 @@ This is a real-world architecture pattern — serverless web applications that p
 | `<YOUR_ACCOUNT_ID>` | Your 12-digit AWS account number | `123456789012` |
 | `<INPUT_BUCKET>` | Unique name for input bucket | `jane-doe-pipeline-input` |
 | `<OUTPUT_BUCKET>` | Unique name for output bucket | `jane-doe-pipeline-output` |
-| `<WEBSITE_BUCKET>` | Unique name for website bucket | `jane-doe-pipeline-website` |
+| `<YOUR_WEBSITE_BUCKET>` | Your **existing** website bucket from Lab 1C (reused here) | `jane-doe-cloud-workshop-site` |
 | `<FUNCTION_URL>` | The Lambda Function URL (you'll get this in Step 7) | `https://abc123.lambda-url.us-east-1.on.aws/` |
 
 ---
@@ -85,13 +85,13 @@ $env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
 export AWS_PROFILE="<YOUR_PROFILE_NAME>"
 ```
 
-We do this to setup the AWS profile name so you don't have to call --profile <YOUR_PROFILE_NAME> after every aws command listed below. Else you would get credentials error.
+We set the AWS profile here so you don't have to add `--profile <YOUR_PROFILE_NAME>` to every command below. Without it, the commands would fail with a credentials error.
 
 ### Step 1b: Connect your CLI to AWS via SSO
 
 Check if your session is still active:
 
-**Note-** You are following on the env file and profile name created in Lab 1a.
+> **Note:** This uses the profile name you created in Lab 1A.
 
 ```
 aws sts get-caller-identity
@@ -109,7 +109,7 @@ Connect to AWS via SSO:
 ```
 aws sso login
 ```
-A new browser should open either authorizating the access (*if you are already logged into the console*) ,or requesting you to log into the console before authorizing the connection.
+A new browser window should open — either authorizing the access automatically (*if you are already logged into the console*), or asking you to log into the console first before authorizing the connection.
 
 ---
 
@@ -157,18 +157,27 @@ pwd
 
 > **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here. This is where your terminal is looking for files.
 
+**Step 2c: Open the folder in VS Code**
+
+📋 Copy and paste:
+
+```
+code .
+```
+
+> **What does this do?** This opens VS Code with `workshop-lab-2c` as its **file tree** on the left. This lab creates several files (JSON configs, two Python functions, and an HTML page) — opening the folder now means every file you create lands in the right place. (You set up the `code` command in Lab 1B — if you see `'code' is not recognized`, close and reopen your terminal, or revisit Lab 1B, Step 6.)
+
 ---
 
-### Step 3: Create Three S3 Buckets
+### Step 3: Create Two S3 Buckets
 
-You need three buckets: one for the website, one for file uploads (input), and one for processed results (output).
+You need two **new** buckets: one for file uploads (input) and one for processed results (output). You will **reuse your existing website bucket from Lab 1C** for the web page, so you do not create a website bucket here.
 
 📋 Copy and paste, **replacing the bucket names** with your own unique names:
 
 ```
 aws s3 mb s3://<INPUT_BUCKET> --region us-east-1
 aws s3 mb s3://<OUTPUT_BUCKET> --region us-east-1
-aws s3 mb s3://<WEBSITE_BUCKET> --region us-east-1
 ```
 
 ---
@@ -179,7 +188,7 @@ Both Lambda functions need a role that gives them permission to access S3 and wr
 
 **Step 4a: Create the trust policy file**
 
-Open your text editor and create a **new file**. 📋 Copy and paste this into the file:
+In the VS Code file tree, click the **New File** icon and name the file `lambda-trust-policy.json`. 📋 Copy and paste this into it:
 
 ```json
 {
@@ -196,7 +205,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `lambda-trust-policy.json`** in your `workshop-lab-2c` folder on your Desktop.
+**Save** the file (**Ctrl+S** / **Cmd+S**).
 
 > **What is this file?** It tells AWS "Lambda functions are allowed to use this role." Without it, Lambda can't assume the role's permissions.
 
@@ -236,11 +245,11 @@ Now you will create the first Lambda function. This function's job is simple: wh
 
 ---
 
-**Step 5a: Open your text editor and create a new file**
+**Step 5a: Create a new file in VS Code**
 
-Open your text editor (VS Code, Notepad, or any editor). Create a **new, empty file**.
+In the VS Code file tree, click the **New File** icon and name the file `presign_function.py`.
 
-> **💡 Important:** Make sure you are saving files in your `workshop-lab-2c` folder on your Desktop. If you're not sure which folder that is, type `pwd` in your terminal to confirm.
+> **💡 Important:** The file needs to be inside your `workshop-lab-2c` folder — it will be, since you opened that folder with `code .` in Step 2c. If unsure, check that the file tree header at the top-left shows `workshop-lab-2c`.
 
 ---
 
@@ -279,14 +288,13 @@ def lambda_handler(event, context):
 
 ---
 
-**Step 5c: Save the file as `presign_function.py`**
+**Step 5c: Save the file**
 
-Save the file with the **exact name** `presign_function.py` in your `workshop-lab-2c` folder on your Desktop. The name matters — Lambda uses it to find the code.
+Press **Ctrl+S** (Windows) or **Cmd+S** (Mac) to save. Because you named it in the file tree, it saves straight into `workshop-lab-2c`.
 
 > **⚠️ Common mistakes:**
-> - Make sure the file extension is `.py` (not `.py.txt` or `.txt`)
-> - Make sure there are no extra spaces or blank lines at the beginning of the file
-> - If using Notepad on Windows, change "Save as type" to "All Files" before saving, otherwise it may add `.txt` to the end
+> - The name must be exactly `presign_function.py` — Lambda uses it to find the code. Naming it in the file tree with the `.py` ending sets the file type automatically (no stray `.txt`).
+> - Make sure there are no extra spaces or blank lines at the very beginning of the file.
 
 ---
 
@@ -383,9 +391,9 @@ Again — **you do NOT need to know Python.** Just copy the code exactly as show
 
 ---
 
-**Step 6a: Open your text editor and create a new file**
+**Step 6a: Create a new file in VS Code**
 
-Create another **new, empty file** in your text editor. This will be a separate file from the one you created in Step 5.
+In the VS Code file tree, create another **New File** and name it `process_function.py`. This is a separate file from the one you created in Step 5.
 
 ---
 
@@ -434,11 +442,11 @@ def lambda_handler(event, context):
 
 ---
 
-**Step 6c: Save the file as `process_function.py`**
+**Step 6c: Save the file**
 
-Save the file with the **exact name** `process_function.py` in your `workshop-lab-2c` folder on your Desktop.
+Press **Ctrl+S** / **Cmd+S** to save. It saves into `workshop-lab-2c` alongside your other files.
 
-> **⚠️ Same warnings as before:** Make sure the extension is `.py`, not `.py.txt`. Make sure there are no extra spaces at the beginning.
+> **⚠️ Same warnings as before:** The name must be exactly `process_function.py`, and there should be no extra spaces or blank lines at the beginning.
 
 ---
 
@@ -548,7 +556,8 @@ aws lambda add-permission --function-name workshop-presign --statement-id Functi
 aws lambda add-permission --function-name workshop-presign --statement-id AllowPublicInvoke --action lambda:InvokeFunction --principal "*" --region us-east-1
 ```
 
-**lambda:InvokeFunction is the general "run this function" permission — Lambda Function URLs require both: InvokeFunctionUrl to authorize the URL endpoint itself, and InvokeFunction to actually execute the function behind it. Without both granted to '*', public access is denied.**
+>[!CAUTION]
+>**lambda:InvokeFunction is the general "run this function" permission — Lambda Function URLs require both: InvokeFunctionUrl to authorize the URL endpoint itself, and InvokeFunction to actually execute the function behind it. Without both granted to '*', public access is denied.**
 
 > **⏳ Wait 1–2 minutes** for the permission to propagate before testing.
 
@@ -572,7 +581,7 @@ aws lambda add-permission --function-name workshop-processor --statement-id s3-t
 
 **Step 8b: Create the notification configuration file**
 
-Open your text editor and create a **new file**. 📋 Copy and paste this into the file, **replacing `<YOUR_ACCOUNT_ID>`** with your 12-digit account number:
+In the VS Code file tree, create a **New File** named `s3-notification.json`. 📋 Copy and paste this into it, **replacing `<YOUR_ACCOUNT_ID>`** with your 12-digit account number:
 
 ```json
 {
@@ -595,7 +604,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `s3-notification.json`** in your `workshop-lab-2c` folder on your Desktop.
+**Save** the file (**Ctrl+S** / **Cmd+S**).
 
 > **What does this file do?** It tells S3: "Whenever a new file ending in `.txt` is uploaded to this bucket, send a notification to the `workshop-processor` Lambda function."
 
@@ -621,7 +630,7 @@ The browser has a security feature called CORS that blocks web pages from talkin
 
 **Step 9a: Create the CORS configuration file**
 
-Open your text editor and create a **new file**. 📋 Copy and paste this into the file (no placeholders to replace here):
+In the VS Code file tree, create a **New File** named `cors.json`. 📋 Copy and paste this into it (no placeholders to replace here):
 
 ```json
 {
@@ -636,7 +645,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this into t
 }
 ```
 
-**Save the file as `cors.json`** in your `workshop-lab-2c` folder on your Desktop.
+**Save** the file (**Ctrl+S** / **Cmd+S**).
 
 > **What does this file do?** It says: "Allow any web page to upload files (PUT) and download files (GET) from this bucket."
 
@@ -674,7 +683,7 @@ aws s3api put-public-access-block --bucket <OUTPUT_BUCKET> --public-access-block
 
 **Step 10b: Create the public read policy file**
 
-Open your text editor and create a **new file**. 📋 Copy and paste this, **replacing `<OUTPUT_BUCKET>`** with your actual output bucket name:
+In the VS Code file tree, create a **New File** named `output-policy.json`. 📋 Copy and paste this into it, **replacing `<OUTPUT_BUCKET>`** with your actual output bucket name:
 
 ```json
 {
@@ -691,7 +700,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this, **rep
 }
 ```
 
-**Save the file as `output-policy.json`** in your `workshop-lab-2c` folder on your Desktop.
+**Save** the file (**Ctrl+S** / **Cmd+S**).
 
 > **⚠️ Make sure** you replaced `<OUTPUT_BUCKET>` with your actual bucket name inside the file before saving.
 
@@ -709,54 +718,15 @@ aws s3api put-bucket-policy --bucket <OUTPUT_BUCKET> --policy file://output-poli
 
 ---
 
-### Step 11: Create and Deploy the Website
+### Step 11: Add the Processor Page to Your Website
 
-**Set up the website bucket** (same as Lab 1C):
+Instead of creating a brand-new website, you will add this app as a **new page on the website you built in Lab 1C**. That bucket already has static website hosting and public read access enabled (you set that up in 1C), so there is nothing to configure here — you simply publish one more HTML file to it and link to it from your homepage.
 
-📋 Replace `<WEBSITE_BUCKET>`:
+> **🧭 Did you complete the 1D sidequest (CloudFront + HTTPS)?** Your site is served through CloudFront and the bucket is private. Everything below still works — you upload the new page exactly the same way — but you will need one extra step (a **cache invalidation**) after each upload, and you will use your CloudFront URL to view it. Look for the **"1D path"** notes in Steps 11b, 11c, and 12.
 
-```
-aws s3 website s3://<WEBSITE_BUCKET> --index-document index.html --error-document index.html
-```
+**Step 11a: Create the processor page**
 
-```
-aws s3api put-public-access-block --bucket <WEBSITE_BUCKET> --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
-```
-
-**Step 11a: Create the website bucket policy file**
-
-Open your text editor and create a **new file**. 📋 Copy and paste this into the file, **replacing `<WEBSITE_BUCKET>`** with your actual website bucket name:
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::<WEBSITE_BUCKET>/*"
-        }
-    ]
-}
-```
-
-**Save the file as `website-policy.json`** in your `workshop-lab-2c` folder on your Desktop.
-
-> **What does this file do?** It tells S3: "Allow anyone on the internet to read (view) files in this bucket." This is what makes your website publicly accessible.
-
-> **⚠️ Make sure** you replaced `<WEBSITE_BUCKET>` with your actual bucket name inside the file before saving.
-
-**Apply the policy.** 📋 Copy and paste, **replacing `<WEBSITE_BUCKET>`**:
-
-```
-aws s3api put-bucket-policy --bucket <WEBSITE_BUCKET> --policy file://website-policy.json
-```
-
-**Step 11b: Create the website HTML file**
-
-Open your text editor and create a **new file**. 📋 Copy and paste this entire block into the file, **replacing `<FUNCTION_URL>` and `<OUTPUT_BUCKET>`** with your actual values:
+In the VS Code file tree, create a **New File** named `processor.html`. 📋 Copy and paste this entire block into it, **replacing `<FUNCTION_URL>` and `<OUTPUT_BUCKET>`** with your actual values:
 
 ```html
 <!DOCTYPE html>
@@ -784,6 +754,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this entire
     </style>
 </head>
 <body>
+    <p><a href="index.html" style="color:#232f3e;">&#8592; Back to Home</a></p>
     <h1>&#9729; Cloud File Processor</h1>
     <p>Upload a text file and watch it get processed automatically by AWS Lambda.</p>
     <p><span class="badge">Serverless</span> <span class="badge">S3</span> <span class="badge">Lambda</span></p>
@@ -890,7 +861,7 @@ Open your text editor and create a **new file**. 📋 Copy and paste this entire
 </html>
 ```
 
-**Save the file as `index.html`** in your `workshop-lab-2c` folder on your Desktop.
+**Save** the file (**Ctrl+S** / **Cmd+S**).
 
 > **What does this file do?** This is your complete web application — it provides a text box for input, calls your Lambda function to get a presigned upload URL, uploads the file to S3, waits for processing, and displays the result. All in one HTML file.
 
@@ -898,25 +869,59 @@ Open your text editor and create a **new file**. 📋 Copy and paste this entire
 
 ---
 
-**Step 11c: Upload the website**
+**Step 11b: Upload the processor page**
 
-📋 Copy and paste, **replacing `<WEBSITE_BUCKET>`**:
+📋 Copy and paste, **replacing `<YOUR_WEBSITE_BUCKET>`** with your Lab 1C website bucket name:
 
 ```
-aws s3 cp index.html s3://<WEBSITE_BUCKET>/index.html --content-type "text/html" --region us-east-1
+aws s3 cp processor.html s3://<YOUR_WEBSITE_BUCKET>/processor.html --content-type "text/html" --region us-east-1
 ```
+
+> **🧭 1D path (CloudFront):** after uploading, refresh CloudFront's cache so it serves the new page (`<YOUR_DIST_ID>` is the Distribution ID from Lab 1D):
+> ```
+> aws cloudfront create-invalidation --distribution-id <YOUR_DIST_ID> --paths "/*"
+> ```
+
+**Step 11c: Add a link to it from your homepage**
+
+Now add a "File Processor" link to your existing homepage so visitors can find the new page. You will download your current `index.html`, add one link, and re-upload it.
+
+📋 Download your current homepage into this lab folder, **replacing `<YOUR_WEBSITE_BUCKET>`**:
+
+```
+aws s3 cp s3://<YOUR_WEBSITE_BUCKET>/index.html index.html
+```
+
+Open `index.html` in VS Code (it will appear in the file tree). Find the closing `</body>` tag near the bottom and add this line **just above it**:
+
+```html
+<p><a href="processor.html">Go to the File Processor &#8594;</a></p>
+```
+
+**Save** the file (**Ctrl+S** / **Cmd+S**), then re-upload it, **replacing `<YOUR_WEBSITE_BUCKET>`**:
+
+```
+aws s3 cp index.html s3://<YOUR_WEBSITE_BUCKET>/index.html --content-type "text/html" --region us-east-1
+```
+
+> **🧭 1D path (CloudFront):** run the cache invalidation again after re-uploading `index.html`:
+> ```
+> aws cloudfront create-invalidation --distribution-id <YOUR_DIST_ID> --paths "/*"
+> ```
 
 ---
 
 ### Step 12: Test Your Application!
 
-Your website URL is:
+Open your **File Processor** page:
 
 ```
-http://<WEBSITE_BUCKET>.s3-website-us-east-1.amazonaws.com
+http://<YOUR_WEBSITE_BUCKET>.s3-website-us-east-1.amazonaws.com/processor.html
 ```
 
-1. Open this URL in your browser
+> **🧭 1D path (CloudFront):** use your CloudFront address instead — `https://<YOUR_DIST_DOMAIN>/processor.html` (e.g., `https://d123abc.cloudfront.net/processor.html`).
+
+1. Open this URL in your browser (or click the new **File Processor** link on your homepage)
 2. Type some text in the text area
 3. Click **Upload & Process**
 4. Wait 5 seconds — the processed result should appear on the page
@@ -932,7 +937,7 @@ http://<WEBSITE_BUCKET>.s3-website-us-east-1.amazonaws.com
 
 You built a **full-stack serverless application** using 5 AWS services working together:
 
-1. **S3 (Website Bucket)** — hosts your web page
+1. **S3 (your Lab 1C website bucket)** — now hosts the processor page alongside your homepage
 2. **Lambda (Presign Function)** — generates secure upload URLs on demand
 3. **S3 (Input Bucket)** — receives uploaded files
 4. **Lambda (Processor Function)** — automatically processes files when they arrive
@@ -966,7 +971,11 @@ This lab covers event-driven architectures, Lambda triggers, S3 event notificati
 
 ## Cleanup
 
-**⚠️ Important:** Clean up all resources.
+>[!IMPORTANT]
+>**⚠️** Follow these steps to remove the file-processor app.
+
+>[!NOTE]
+> **💰 What if you left it running?** The whole pipeline sits within the always-free tier — Lambda covers 1 million requests/month free, and the near-empty input/output buckets cost only fractions of a cent. Realistically, leaving it in place would cost about **$0.00–$0.01/month**. Even so, it's good practice to remove what you no longer need, so we clean it up below. **We keep your Lab 1C website in place** (it's your site) and only remove the processor's backend and the extra page.
 
 ### Step 1: Remove S3 Notification
 
@@ -989,18 +998,36 @@ aws lambda delete-function --function-name workshop-presign --region us-east-1
 aws lambda delete-function --function-name workshop-processor --region us-east-1
 ```
 
-### Step 3: Empty and Delete All Buckets
+### Step 3: Empty and Delete the Input and Output Buckets
 
-📋 Replace all bucket names:
+Delete only the two buckets you created for this lab. **Do not delete your Lab 1C website bucket** — you are keeping the site.
+
+📋 Replace the bucket names:
 
 ```
 aws s3 rm s3://<INPUT_BUCKET> --recursive
 aws s3 rm s3://<OUTPUT_BUCKET> --recursive
-aws s3 rm s3://<WEBSITE_BUCKET> --recursive
 aws s3 rb s3://<INPUT_BUCKET>
 aws s3 rb s3://<OUTPUT_BUCKET>
-aws s3 rb s3://<WEBSITE_BUCKET>
 ```
+
+### Step 3b: Remove the Processor Page from Your Website
+
+Because the backend is now gone, remove the processor page and the homepage link so your site has no broken buttons.
+
+📋 Delete the processor page, **replacing `<YOUR_WEBSITE_BUCKET>`**:
+
+```
+aws s3 rm s3://<YOUR_WEBSITE_BUCKET>/processor.html
+```
+
+Then re-open your local `index.html` in VS Code, delete the "Go to the File Processor" link line you added in Step 11c, **Save**, and re-upload it:
+
+```
+aws s3 cp index.html s3://<YOUR_WEBSITE_BUCKET>/index.html --content-type "text/html" --region us-east-1
+```
+
+> **🧭 1D path (CloudFront):** run a cache invalidation after these changes so CloudFront stops serving the removed page: `aws cloudfront create-invalidation --distribution-id <YOUR_DIST_ID> --paths "/*"`.
 
 ### Step 4: Delete the IAM Role
 
@@ -1012,17 +1039,21 @@ aws iam delete-role --role-name workshop-pipeline-role
 
 ### Step 5: Delete Local Files
 
+> **⚠️ Close VS Code first.** If VS Code still has the `workshop-lab-2c` folder open, the delete will fail — especially on Windows. Choose **File → Close Folder** or quit VS Code before running the commands below. The commands also move you to your home directory (`cd ~`) first so the terminal isn't sitting inside the folder it's deleting.
+
 Remove the project folder you created for this lab:
 
 **macOS / Linux:**
 
 ```bash
+cd ~
 rm -rf ~/Desktop/workshop-lab-2c
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
+cd ~
 Remove-Item -Recurse -Force ~\Desktop\workshop-lab-2c
 ```
 
@@ -1030,7 +1061,7 @@ Remove-Item -Recurse -Force ~\Desktop\workshop-lab-2c
 
 **✅ Checkpoint:**
 1. **Lambda** → Functions → both functions are gone
-2. **S3** → all three buckets are gone
+2. **S3** → the input and output buckets are gone; **your Lab 1C website bucket remains** (with `processor.html` removed)
 3. **IAM** → Roles → `workshop-pipeline-role` is gone
 
 ---

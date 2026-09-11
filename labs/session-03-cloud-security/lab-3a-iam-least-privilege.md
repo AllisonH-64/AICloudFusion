@@ -26,7 +26,7 @@ By the end of this lab, you will understand the **principle of least privilege**
 
 - ✅ Completed **Lab 1A** (AWS CLI installed and configured)
 - ✅ AWS CLI authenticated — run `aws sts get-caller-identity` and confirm it returns your account info
-- ✅ A text editor to create JSON files (VS Code, Notepad, or any editor)
+- ✅ **VS Code** installed (from Lab 1B) — any text editor works, but these labs assume VS Code
 
 ---
 
@@ -35,9 +35,9 @@ By the end of this lab, you will understand the **principle of least privilege**
 | Service | What It Is | Cost |
 |---------|-----------|------|
 | IAM | Identity and Access Management | Always Free |
-| Amazon S3 | Cloud storage for files | 0.023 per GB |
+| Amazon S3 | Cloud storage for files | $0.023 per GB/month |
 
-**Estimated cost for this lab: $0.00** - As you would have already created buckets from previous labs.
+**Estimated cost for this lab: $0.00** — the test bucket holds a single tiny file and is deleted in cleanup.
 
 ---
 
@@ -138,6 +138,16 @@ pwd
 
 > **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here.
 
+**Step 2c: Open the folder in VS Code**
+
+📋 Copy and paste:
+
+```
+code .
+```
+
+> **What does this do?** This opens VS Code with `workshop-lab-3a` as its **file tree** on the left, so the policy file you create in Step 5 lands in the right place. (You set up the `code` command in Lab 1B — if you see `'code' is not recognized`, close and reopen your terminal, or revisit Lab 1B, Step 6.)
+
 ---
 
 ### Step 3: Create an S3 Bucket and Upload a Test File
@@ -168,7 +178,7 @@ Now upload a test file to the bucket.
 📋 Copy and paste, **replacing `<YOUR_BUCKET_NAME>`**:
 
 ```powershell
-"This is a secret document. Only authorized readers should see this." | Out-File test-file.txt
+"This is a secret document. Only authorized readers should see this." | Out-File -Encoding utf8 test-file.txt
 aws s3 cp test-file.txt s3://<YOUR_BUCKET_NAME>/test-file.txt
 ```
 
@@ -209,9 +219,9 @@ aws iam create-user --user-name workshop-readonly-user
 
 Now you will write a custom IAM policy that grants ONLY read access to your specific bucket. This is the **least privilege** principle in action — the user can read from this one bucket and nothing else.
 
-**Step 5a:** Open your text editor (VS Code, Notepad, or any editor) and create a **new, empty file**.
+**Step 5a:** In the VS Code file tree, click the **New File** icon and name the file `s3-readonly-policy.json`.
 
-**Step 5b:** 📋 Copy and paste this entire block into the file, **replacing `<YOUR_BUCKET_NAME>`** in BOTH places:
+**Step 5b:** 📋 Copy and paste this entire block into it, **replacing `<YOUR_BUCKET_NAME>`** in BOTH places:
 
 ```json
 {
@@ -242,9 +252,9 @@ Now you will write a custom IAM policy that grants ONLY read access to your spec
 > "Resource": "arn:aws:s3:::jane-doe-lab3a-readonly/*"
 > ```
 
-**Step 5c:** Save the file as `s3-readonly-policy.json` in your `workshop-lab-3a` folder on your Desktop.
+**Step 5c:** **Save** the file (**Ctrl+S** / **Cmd+S**). You should see `s3-readonly-policy.json` appear in the file tree.
 
-> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+> **⚠️ Common mistake:** Make sure the name is exactly `s3-readonly-policy.json`, not `s3-readonly-policy.json.txt`. Naming it in the file tree with a `.json` ending sets the file type automatically.
 
 > **What does this file do?** It defines a policy with two permissions:
 > - **ListBucket** — allows the user to list the contents of the bucket (like `ls` in a folder)
@@ -588,6 +598,8 @@ aws s3 rb s3://<YOUR_BUCKET_NAME>
 **✅ You should see** `remove_bucket: <YOUR_BUCKET_NAME>`.
 
 ### Step 5: Delete Local Files
+
+> **⚠️ Close VS Code first.** If VS Code still has the `workshop-lab-3a` folder open, the delete will fail — especially on Windows. Choose **File → Close Folder** or quit VS Code before running the commands below.
 
 Remove the project folder:
 

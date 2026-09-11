@@ -15,7 +15,7 @@ In this lab, you will:
 1. **Create an IAM group** — assign permissions to many users at once
 2. **Write a custom policy with an explicit Deny** — prevent dangerous actions even if another policy allows them
 3. **Add a user to the group** — the user inherits the group's permissions automatically
-4. **Test the permissions** — prove that reads work and deletes are blocked by the explicit Deny
+4. **Test before and after** — the user can delete with full access, then loses that ability the moment it joins the group with an explicit Deny
 5. **Enable MFA on your root account** — add a second layer of security
 
 By the end of this lab, you will understand how groups simplify permission management, how explicit Deny overrides Allow, and why MFA is a critical security control.
@@ -27,7 +27,7 @@ By the end of this lab, you will understand how groups simplify permission manag
 - ✅ Completed **Lab 1A** (AWS CLI installed and configured)
 - ✅ Completed **Lab 3A** (familiar with IAM users and policies)
 - ✅ AWS CLI authenticated — run `aws sts get-caller-identity` and confirm it returns your account info
-- ✅ A text editor to create JSON files (VS Code, Notepad, or any editor)
+- ✅ **VS Code** installed (from Lab 1B) — any text editor works, but these labs assume VS Code
 - ✅ A smartphone with an authenticator app installed (Google Authenticator, Authy, or Microsoft Authenticator) — needed for the MFA section (MFA should have been done since Session 1, but is important enough in Security to revisit for those who ignored that step.)
 
 ---
@@ -37,10 +37,10 @@ By the end of this lab, you will understand how groups simplify permission manag
 | Service | What It Is | Cost |
 |---------|-----------|------|
 | IAM | Identity and Access Management | Always Free |
-| Amazon S3 | Cloud storage for files | 0.023 per GB |
+| Amazon S3 | Cloud storage for files | $0.023 per GB/month |
 | MFA | Multi-Factor Authentication | Always Free |
 
-**Estimated cost for this lab: $0.00** - As you would have already created buckets from previous labs.
+**Estimated cost for this lab: $0.00** — the test bucket holds a single tiny file and is deleted in cleanup.
 
 ---
 
@@ -139,6 +139,16 @@ pwd
 
 > **💡 From now on, save ALL files you create in this lab to this folder.** When the lab says "save the file," save it here.
 
+**Step 2c: Open the folder in VS Code**
+
+📋 Copy and paste:
+
+```
+code .
+```
+
+> **What does this do?** This opens VS Code with `workshop-lab-3b` as its **file tree** on the left, so the policy file you create in Step 5 lands in the right place. (You set up the `code` command in Lab 1B — if you see `'code' is not recognized`, close and reopen your terminal, or revisit Lab 1B, Step 6.)
+
 ---
 
 ### Step 3: Create an S3 Bucket and Upload a Test File
@@ -167,7 +177,7 @@ Now upload a test file:
 📋 Copy and paste, **replacing `<YOUR_BUCKET_NAME>`**:
 
 ```powershell
-"Confidential HR data - do not delete" | Out-File test-file.txt
+"Confidential HR data - do not delete" | Out-File -Encoding utf8 test-file.txt
 aws s3 cp test-file.txt s3://<YOUR_BUCKET_NAME>/test-file.txt
 ```
 
@@ -210,9 +220,9 @@ aws iam create-group --group-name workshop-s3-readers
 
 This policy has TWO statements — one that allows read access, and one that explicitly denies destructive actions.
 
-**Step 5a:** Open your text editor and create a **new, empty file**.
+**Step 5a:** In the VS Code file tree, click the **New File** icon and name the file `custom-s3-policy.json`.
 
-**Step 5b:** 📋 Copy and paste this entire block into the file, **replacing `<YOUR_BUCKET_NAME>`** in ALL FOUR places:
+**Step 5b:** 📋 Copy and paste this entire block into it, **replacing `<YOUR_BUCKET_NAME>`** in ALL FOUR places:
 
 ```json
 {
@@ -248,9 +258,12 @@ This policy has TWO statements — one that allows read access, and one that exp
 
 > **🔄 Example:** If your bucket name is `jane-doe-lab3b-groups`, replace all four instances of `<YOUR_BUCKET_NAME>` with `jane-doe-lab3b-groups`.
 
-**Step 5c:** Save the file as `custom-s3-policy.json` in your `workshop-lab-3b` folder on your Desktop.
+>[!TIP]
+>When you highlight one of the placeholder you should notice all of them get highlighted. Clicking Ctrl+Left Shift+L will allow you to edit them simultaneously.
 
-> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). Make sure you replaced `<YOUR_BUCKET_NAME>` in ALL FOUR places (two in each statement).
+**Step 5c:** **Save** the file (**Ctrl+S** / **Cmd+S**). You should see `custom-s3-policy.json` appear in the file tree.
+
+> **⚠️ Common mistake:** Make sure the name is exactly `custom-s3-policy.json`, not `custom-s3-policy.json.txt`, and that you replaced `<YOUR_BUCKET_NAME>` in ALL FOUR places (two in each statement). Naming it in the file tree with a `.json` ending sets the file type automatically.
 
 > **What does this file do?** It defines two rules:
 > - **Statement 1 (Allow):** The user can list the bucket and read files from it
@@ -287,7 +300,9 @@ aws iam put-group-policy --group-name workshop-s3-readers --policy-name CustomS3
 
 ---
 
-### Step 7: Create a User and Add to the Group
+### Step 7: Create a User and Give It Broad S3 Access
+
+This time you will deliberately give the user **more** access than it should have — full S3 access, attached directly to the user. This sets up the real test: can the group's explicit Deny override a broad Allow? (Think of a user who was *accidentally* granted too much access.)
 
 **Step 7a: Create the user**
 
@@ -299,21 +314,21 @@ aws iam create-user --user-name workshop-group-member
 
 **✅ You should see** JSON output with `"UserName": "workshop-group-member"`.
 
-**Step 7b: Add the user to the group**
+**Step 7b: Attach full S3 access directly to the user**
 
 📋 Copy and paste:
 
 ```
-aws iam add-user-to-group --user-name workshop-group-member --group-name workshop-s3-readers
+aws iam attach-user-policy --user-name workshop-group-member --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 ```
 
-**What does this do?** Adds the user to the group. The user now inherits ALL policies attached to the group — without you needing to attach anything directly to the user.
+**What does this do?** Attaches the AWS-managed `AmazonS3FullAccess` policy **directly to the user**. This allows every S3 action — including delete — on every bucket. The user is **not** in the group yet.
 
 **✅ No output means success.**
 
 ---
 
-### Step 8: Create Access Keys and Test
+### Step 8: Prove the User CAN Delete (Before Joining the Group)
 
 **Step 8a: Create access keys**
 
@@ -330,7 +345,7 @@ aws iam create-access-key --user-name workshop-group-member
 > - **AccessKeyId:** ______________________________
 > - **SecretAccessKey:** ______________________________
 
-**Step 8b: Set the restricted user's credentials**
+**Step 8b: Set the user's credentials**
 
 **Windows (PowerShell):**
 
@@ -354,7 +369,7 @@ export AWS_DEFAULT_REGION="us-east-1"
 unset AWS_PROFILE
 ```
 
-**Step 8c: Verify you are the group member**
+**Step 8c: Verify you are the user**
 
 📋 Copy and paste:
 
@@ -364,21 +379,97 @@ aws sts get-caller-identity
 
 **✅ You should see** `workshop-group-member` in the output.
 
----
-
-**Step 8d: Test LIST — should WORK ✅**
+**Step 8d: Test DELETE — should WORK ✅**
 
 📋 Copy and paste, **replacing `<YOUR_BUCKET_NAME>`**:
 
 ```
-aws s3 ls s3://<YOUR_BUCKET_NAME>/
+aws s3 rm s3://<YOUR_BUCKET_NAME>/test-file.txt 2>&1
 ```
 
-**✅ You should see** `test-file.txt` listed. The group policy allows listing.
+**✅ You should see:** `delete: s3://<YOUR_BUCKET_NAME>/test-file.txt`. Right now the user **can** delete the file, because `AmazonS3FullAccess` allows it and nothing is blocking it.
+
+**Step 8e: Put the file back** (you will need it for the next test). 📋 Copy and paste, **replacing `<YOUR_BUCKET_NAME>`**:
+
+```
+aws s3 cp test-file.txt s3://<YOUR_BUCKET_NAME>/test-file.txt
+```
+
+**✅ You should see** the upload succeed. (The user can also upload, because it still has full S3 access.)
 
 ---
 
-**Step 8e: Test DELETE — should be DENIED ❌ (Explicit Deny)**
+### Step 9: Switch Back to Admin and Add the User to the Group
+
+The group carries the **explicit Deny** on delete (from Step 5). Now you will add the user to it — while keeping the full-access policy attached — to see which one wins.
+
+**Step 9a: Switch back to your admin credentials**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste, **replacing `<YOUR_PROFILE_NAME>`**:
+
+```powershell
+Remove-Item Env:\AWS_ACCESS_KEY_ID
+Remove-Item Env:\AWS_SECRET_ACCESS_KEY
+Remove-Item Env:\AWS_DEFAULT_REGION
+$env:AWS_PROFILE="<YOUR_PROFILE_NAME>"
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste, **replacing `<YOUR_PROFILE_NAME>`**:
+
+```bash
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset AWS_DEFAULT_REGION
+export AWS_PROFILE="<YOUR_PROFILE_NAME>"
+```
+
+**Step 9b: Add the user to the group**
+
+📋 Copy and paste:
+
+```
+aws iam add-user-to-group --user-name workshop-group-member --group-name workshop-s3-readers
+```
+
+**What does this do?** The user now has BOTH: `AmazonS3FullAccess` (attached directly, which **allows** delete) and the group's policy (which **explicitly denies** delete on your bucket).
+
+**✅ No output means success.**
+
+> **⏳ Wait about 10 seconds** for the change to take effect before testing.
+
+---
+
+### Step 10: Prove the User Can NO LONGER Delete (Explicit Deny Wins)
+
+**Step 10a: Switch back to the user's credentials**
+
+**Windows (PowerShell):**
+
+📋 Copy and paste (the same keys from Step 8a):
+
+```powershell
+$env:AWS_ACCESS_KEY_ID="<ACCESS_KEY_ID_FROM_STEP_8A>"
+$env:AWS_SECRET_ACCESS_KEY="<SECRET_ACCESS_KEY_FROM_STEP_8A>"
+$env:AWS_DEFAULT_REGION="us-east-1"
+Remove-Item Env:\AWS_PROFILE
+```
+
+**macOS / Linux:**
+
+📋 Copy and paste (the same keys from Step 8a):
+
+```bash
+export AWS_ACCESS_KEY_ID="<ACCESS_KEY_ID_FROM_STEP_8A>"
+export AWS_SECRET_ACCESS_KEY="<SECRET_ACCESS_KEY_FROM_STEP_8A>"
+export AWS_DEFAULT_REGION="us-east-1"
+unset AWS_PROFILE
+```
+
+**Step 10b: Test DELETE — should now be DENIED ❌**
 
 📋 Copy and paste, **replacing `<YOUR_BUCKET_NAME>`**:
 
@@ -388,13 +479,15 @@ aws s3 rm s3://<YOUR_BUCKET_NAME>/test-file.txt 2>&1
 
 **✅ You should see an error:** `delete failed` with `An error occurred (AccessDenied)`.
 
-This is the **explicit Deny** in action. Even though the user is in a group with read permissions, the Deny statement blocks all delete operations. No other policy can override this.
+**This is the whole point of the lab.** The same user, running the same command, could delete the file moments ago. The only thing that changed is that it joined a group with an **explicit Deny**. The user *still* has `AmazonS3FullAccess` (which allows delete) — but the explicit Deny overrides it. **Deny always wins.**
+
+> **💡 Why this matters:** you cannot always control every Allow a user accumulates (from groups, directly attached policies, federated roles, and so on). An explicit Deny is a guardrail that holds no matter how many Allows pile up.
 
 ---
 
-### Step 9: Switch Back to Admin Credentials
+### Step 11: Switch Back to Admin Credentials
 
-**⚠️ Important:** Clear the restricted credentials and restore your admin profile before continuing.
+**⚠️ Important:** Clear the user's credentials and restore your admin profile before continuing.
 
 **Windows (PowerShell):**
 
@@ -430,7 +523,7 @@ aws sts get-caller-identity
 
 ---
 
-### Step 10: Console Checkpoint — Groups
+### Step 12: Console Checkpoint — Groups
 
 Let's verify the group setup in the AWS Console:
 
@@ -447,7 +540,7 @@ Let's verify the group setup in the AWS Console:
 
 ---
 
-### Step 11: Enable MFA on Your Root Account
+### Step 13: Enable MFA on Your Root Account
 
 MFA is the single most important security control you can enable on your AWS account. If your root account password is compromised, MFA prevents the attacker from logging in.
 
@@ -455,13 +548,13 @@ MFA is the single most important security control you can enable on your AWS acc
 
 > **📱 You will need:** Your smartphone with an authenticator app installed (Google Authenticator, Authy, or Microsoft Authenticator).
 
-**Step 11a: Navigate to Security Credentials**
+**Step 13a: Navigate to Security Credentials**
 
 1. Sign in to the [AWS Console](https://console.aws.amazon.com/) as the **root user** (use your root email and password, NOT your Identity Center user)
 2. Click your **account name** in the top-right corner of the console
 3. Click **Security credentials**
 
-**Step 11b: Set Up MFA**
+**Step 13b: Set Up MFA**
 
 1. Scroll down to the **Multi-factor authentication (MFA)** section
 2. Click **Assign MFA device**
@@ -469,7 +562,7 @@ MFA is the single most important security control you can enable on your AWS acc
 4. Select **Authenticator app**
 5. Click **Next**
 
-**Step 11c: Link Your Authenticator App**
+**Step 13c: Link Your Authenticator App**
 
 1. Click **Show QR code**
 2. Open your authenticator app on your phone (Google Authenticator, Authy, etc.)
@@ -477,7 +570,7 @@ MFA is the single most important security control you can enable on your AWS acc
 4. Select **Scan QR code** and point your phone camera at the QR code on screen
 5. Your app will start generating 6-digit codes that change every 30 seconds
 
-**Step 11d: Verify MFA**
+**Step 13d: Verify MFA**
 
 1. Enter the **current 6-digit code** from your authenticator app into the **MFA code 1** field
 2. **Wait** for the code to change (about 30 seconds)
@@ -498,7 +591,7 @@ You built a multi-layered security setup:
 
 1. **Created a group** — the scalable way to manage permissions for multiple users
 2. **Wrote a policy with explicit Deny** — a safety net that cannot be overridden
-3. **Proved that Deny always wins** — even with read access, deletes are blocked
+3. **Proved that Deny always wins** — the user could delete the file with full S3 access, but the group's explicit Deny blocked it the moment the user joined
 4. **Enabled MFA** — added a second authentication factor to your root account
 
 This is **defense in depth** — multiple layers of security working together. If one layer fails, the others still protect you.
@@ -526,10 +619,11 @@ The Security Specialty exam tests these concepts heavily:
 |-------|--------------|---------------|
 | `An error occurred (EntityAlreadyExists)` when creating the group or user | The resource already exists from a previous attempt | Delete it first (see cleanup steps) and try again |
 | `An error occurred (MalformedPolicyDocument)` when attaching the policy | Your JSON file has a syntax error | Open `custom-s3-policy.json` and check for missing commas, brackets, or quotes. Make sure you replaced `<YOUR_BUCKET_NAME>` in all four places. |
-| Delete test shows "Access Denied" but you expected it to work | This is correct behavior! | The explicit Deny is working as intended. Access Denied IS the expected result for Step 8e. |
+| Delete in **Step 10b** shows "Access Denied" | This is correct behavior! | The explicit Deny is working as intended — Access Denied IS the expected result at Step 10b. (In Step 8d, *before* joining the group, the same delete should have **succeeded**.) |
+| Delete in **Step 8d** fails with "Access Denied" (but should work) | The full-access policy hasn't propagated yet, or the user was added to the group too early | Wait ~10 seconds after Step 7b and retry. Make sure you have not yet run Step 9b (adding the user to the group) at this point. |
 | Cannot find "Security credentials" in the console | You may be logged in as your Identity Center user | Sign out and sign back in as the **root user** (the email you used to create the account) |
 | MFA code is rejected | The code expired or there is a time sync issue | Wait for a fresh code. Make sure your phone's clock is set to automatic. |
-| `get-caller-identity` still shows group member after cleanup | Env vars were not cleared | Run the commands in Step 9 again. Close and reopen your terminal if needed. |
+| `get-caller-identity` still shows the user after cleanup | Env vars were not cleared | Run the commands in Step 11 again. Close and reopen your terminal if needed. |
 
 ---
 
@@ -573,6 +667,18 @@ aws iam delete-access-key --user-name workshop-group-member --access-key-id <ACC
 
 ```
 aws iam remove-user-from-group --user-name workshop-group-member --group-name workshop-s3-readers
+```
+
+**✅ No output means success.**
+
+### Step 2b: Detach the Full S3 Access Policy
+
+The user still has `AmazonS3FullAccess` attached directly (from Step 7b). You must detach it before the user can be deleted.
+
+📋 Copy and paste:
+
+```
+aws iam detach-user-policy --user-name workshop-group-member --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 ```
 
 **✅ No output means success.**
@@ -622,6 +728,8 @@ aws s3 rb s3://<YOUR_BUCKET_NAME>
 **✅ You should see** `remove_bucket: <YOUR_BUCKET_NAME>`.
 
 ### Step 7: Delete Local Files
+
+> **⚠️ Close VS Code first.** If VS Code still has the `workshop-lab-3b` folder open, the delete will fail — especially on Windows. Choose **File → Close Folder** or quit VS Code before running the commands below.
 
 Remove the project folder:
 

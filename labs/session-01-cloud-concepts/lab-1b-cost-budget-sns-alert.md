@@ -22,7 +22,7 @@ By the end of this lab, you will have:
 
 - ✅ Completed **Lab 1A** (AWS CLI installed and configured)
 - ✅ AWS CLI authenticated — run `aws sts get-caller-identity` and confirm it returns your account info
-- ✅ Your **AWS account ID** (the 12-digit number from Lab 1A, Step 6)
+- ✅ Your **AWS account ID** (the 12-digit number you saved in Lab 1A, Step 22)
 - ✅ An **email address** you can check during this lab (you will need to click a confirmation link)
 
 ---
@@ -68,6 +68,7 @@ Here are the placeholders you will use in this lab:
 | `<YOUR_ACCOUNT_ID>` | Your 12-digit AWS account number | `123456789012` |
 | `<YOUR_EMAIL_ADDRESS>` | An email address you can check right now | `jane.doe@gmail.com` |
 | `<YOUR_TOPIC_ARN>` | The TopicArn value returned in Step 3 (you will get this during the lab) | `arn:aws:sns:us-east-1:123456789012:workshop-budget-alert` |
+| `<YOUR_SUBSCRIPTION_ARN>` | The SubscriptionArn from the Cleanup step (the topic ARN followed by a long random ID) | `arn:aws:sns:us-east-1:123456789012:workshop-budget-alert:1a2b3c4d-5e6f-7890-abcd-ef1234567890` |
 
 ---
 
@@ -241,7 +242,29 @@ AWS just sent a confirmation email to the address you provided. You need to clic
 
 AWS Budgets needs a configuration file that describes your budget. You will create a small JSON file (a structured text file that AWS can read).
 
-1. Open your text editor (VS Code, Notepad, or any editor) and create a **new, empty file**.
+> **📝 A note on text editors — we use VS Code.** Any plain-text editor can create these files (Notepad, TextEdit, nano, etc.), so you are free to use whatever you like. **From here on, though, these labs assume you are using [Visual Studio Code (VS Code)](https://code.visualstudio.com/)** — a free editor from Microsoft. We rely on it much more heavily in later sessions, especially the **Infrastructure as Code (IaC)** labs, where a real editor with a file tree, syntax highlighting, and a built-in terminal makes a big difference. Getting comfortable with it now will pay off later.
+>
+> **Install it (one time only):**
+> 1. Go to [https://code.visualstudio.com/](https://code.visualstudio.com/) and click **Download** for your operating system.
+> 2. Run the installer and accept the defaults.
+> 3. **Windows:** on the "Select Additional Tasks" screen, leave **"Add to PATH"** checked (it already is by default) — this is what lets you launch VS Code from the terminal.
+> 4. **macOS:** open VS Code once, press **Cmd+Shift+P**, type **Shell Command: Install 'code' command in PATH**, and press Enter — this enables the `code` command in Terminal.
+
+**Step 6a: Open your project folder in VS Code**
+
+Your terminal is already inside the `workshop-lab-1b` folder from Step 2. 📋 Copy and paste:
+
+```
+code .
+```
+
+> **What does this do?** `code` launches VS Code, and the `.` (a single dot, meaning "the folder I'm currently in") tells it which folder to open. VS Code starts up with `workshop-lab-1b` as its **file tree** on the left. Every file you create and save here appears in that panel — and, just as importantly, stays in the exact folder your AWS commands read from.
+>
+> **🔧 If you see `'code' is not recognized` or `command not found`:** the `code` command isn't on your PATH yet. Close your terminal and open a fresh one, then try again. If it still fails, reinstall VS Code with the "Add to PATH" option checked (Windows) or run the "Install 'code' command in PATH" step above (macOS).
+
+**Step 6b: Create the budget file**
+
+1. In the VS Code **file tree** (the left panel), click the **New File** icon and name the file `budget.json`. It opens as an empty tab in the editor.
 
 2. 📋 Copy and paste this entire block into the file:
 
@@ -257,9 +280,9 @@ AWS Budgets needs a configuration file that describes your budget. You will crea
 }
 ```
 
-3. **Save the file as `budget.json`** in your `workshop-lab-1b` folder on your Desktop.
+3. **Save** the file with **Ctrl+S** (Windows) or **Cmd+S** (Mac). Because you created it inside the file tree, it saves straight into `workshop-lab-1b` — no need to choose a location.
 
-> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+> **⚠️ Common mistake:** Make sure the name is exactly `budget.json`, not `budget.json.txt`. Naming the file in the file tree with a `.json` ending sets the file type automatically — you should see a JSON icon next to it.
 
 > **What does this file do?** It defines your budget configuration — the name, dollar limit, type, and time period that AWS Budgets will use.
 
@@ -279,7 +302,7 @@ AWS Budgets needs a configuration file that describes your budget. You will crea
 
 Now create a second file that tells AWS Budgets **when** to send an alert and **where** to send it.
 
-1. Open your text editor and create a **new file**.
+1. In the VS Code **file tree**, click the **New File** icon and name this file `notifications.json`. It opens as an empty tab.
 
 2. 📋 Copy and paste this entire block into the file, **replacing `<YOUR_TOPIC_ARN>`** with the TopicArn you saved in Step 3:
 
@@ -302,9 +325,9 @@ Now create a second file that tells AWS Budgets **when** to send an alert and **
 ]
 ```
 
-3. **Save the file as `notifications.json`** in your `workshop-lab-1b` folder on your Desktop.
+3. **Save** the file with **Ctrl+S** (Windows) or **Cmd+S** (Mac). It saves into `workshop-lab-1b` alongside `budget.json`, and you should now see both files in the file tree.
 
-> **⚠️ Common mistakes:** Make sure the file extension is `.json` (not `.json.txt`). If using Notepad on Windows, change 'Save as type' to 'All Files' before saving.
+> **⚠️ Common mistake:** Make sure the name is exactly `notifications.json`, not `notifications.json.txt`. Naming it in the file tree with a `.json` ending sets the file type automatically.
 
 > **What does this file do?** It tells AWS Budgets when to send an alert (at 80% of your budget) and where to send it (your SNS topic, which forwards to your email).
 
@@ -423,7 +446,8 @@ This lab covers concepts from the **Cost Optimization** pillar of the AWS Well-A
 
 ## Cleanup
 
-**⚠️ Important:** Always clean up resources after completing a lab to avoid unexpected charges. Follow these steps in order.
+>[!IMPORTANT]
+>**⚠️** Always clean up resources after completing a lab to avoid unexpected charges. Follow these steps in order.
 
 ### Step 1: Delete the Budget
 
@@ -435,9 +459,49 @@ aws budgets delete-budget --account-id <YOUR_ACCOUNT_ID> --budget-name "workshop
 
 **✅ No output means success.**
 
-### Step 2: Delete the SNS Topic and Subscription
+### Step 2: Delete the SNS Subscription, Then the Topic
 
-Deleting the topic automatically removes all subscriptions attached to it.
+An email subscription is **not** reliably removed when you delete its topic — it can linger and must be deleted explicitly. So you will remove the subscription first, then the topic.
+
+**Step 2a: Find the subscription's ARN**
+
+📋 Copy and paste this command, **replacing `<YOUR_TOPIC_ARN>`**:
+
+```
+aws sns list-subscriptions-by-topic --topic-arn <YOUR_TOPIC_ARN> --region us-east-1
+```
+
+**✅ You should see output like this:**
+
+```json
+{
+    "Subscriptions": [
+        {
+            "SubscriptionArn": "arn:aws:sns:us-east-1:123456789012:workshop-budget-alert:1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+            "Owner": "123456789012",
+            "Protocol": "email",
+            "Endpoint": "jane.doe@gmail.com",
+            "TopicArn": "arn:aws:sns:us-east-1:123456789012:workshop-budget-alert"
+        }
+    ]
+}
+```
+
+> **📝 Copy the full `SubscriptionArn` value** — you will use it in the next command. Notice it is the topic ARN followed by a long random ID; that trailing ID is what makes it different from your `TopicArn`.
+>
+> **If `SubscriptionArn` shows `PendingConfirmation`** instead of a full ARN, you never confirmed the email. It cannot be unsubscribed and expires on its own after 3 days — skip to **Step 2c** and just delete the topic.
+
+**Step 2b: Delete the subscription**
+
+📋 Copy and paste this command, **replacing `<YOUR_SUBSCRIPTION_ARN>`** with the value you just copied:
+
+```
+aws sns unsubscribe --subscription-arn <YOUR_SUBSCRIPTION_ARN> --region us-east-1
+```
+
+**✅ No output means success.**
+
+**Step 2c: Delete the topic**
 
 📋 Copy and paste this command, **replacing `<YOUR_TOPIC_ARN>`**:
 
@@ -446,8 +510,6 @@ aws sns delete-topic --topic-arn <YOUR_TOPIC_ARN> --region us-east-1
 ```
 
 **✅ No output means success.**
-
-Go to the AWS Console and manually remove the orphaned subscripton.
 
 ### Step 3: Verify Everything Is Gone
 
@@ -465,28 +527,44 @@ aws sns list-topics --region us-east-1
 
 **✅ You should see** that `workshop-budget-alert` is no longer in the list.
 
+```
+aws sns list-subscriptions --region us-east-1
+```
+
+**✅ You should see** no subscription pointing to the `workshop-budget-alert` topic with your email address. (A leftover entry whose `SubscriptionArn` reads `Deleted` is harmless and disappears on its own.)
+
 **✅ Checkpoint — Verify in the AWS Console:**
 1. Go to **AWS Budgets** — confirm `workshop-monthly-budget` is gone
-2. Go to **SNS > Topics** — confirm `workshop-budget-alert` is gone
+2. Go to **SNS → Topics** — confirm `workshop-budget-alert` is gone
+3. Go to **SNS → Subscriptions** — confirm no subscription for your email remains
 
 ### Step 4: Delete Local Files
+
+> **⚠️ Close VS Code first.** While VS Code has the `workshop-lab-1b` folder open, your operating system treats the folder as "in use" and the delete command below will fail — especially on Windows. Before you delete it, either choose **File → Close Folder** in VS Code or close VS Code entirely. Also note the terminal you run the command in must **not** be sitting inside that folder, which is why the commands below move you to your home directory (`cd ~`) first.
 
 Remove the project folder you created for this lab:
 
 **macOS / Linux:**
 
 ```bash
+cd ~
 rm -rf ~/Desktop/workshop-lab-1b
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
+cd ~
 Remove-Item -Recurse -Force ~\Desktop\workshop-lab-1b
 ```
 
-### Step 5: Time to Redo!
-Now that you’ve successfully cleaned up this lab, it’s strongly recommended to **set up a budget again** for the duration of the project. Associating a budget with any project is considered best practice, and in this case the cost of keeping this budget, SNS topic and subscription active over three months should remain at zero or very close to it. Whereas, the **safeguard it provides in alerting you** in advance if any resources consuming credits are left behind, is invaluable.
+> **🔧 If you still get "cannot remove ... it is being used by another process" (Windows):** VS Code or one of its terminals is still holding the folder open. Close VS Code completely, open a brand-new PowerShell window, and run the two commands above again.
+
+>[!IMPORTANT]
+>### Step 5: Time to Redo!
+>Now that you’ve successfully cleaned up this lab, it’s strongly recommended to **set up a budget again** for the duration of the project. Associating a budget with any project is considered best practice, and in this case the cost of keeping this budget, SNS topic and subscription active over three months should remain at zero or very close to it. Whereas, the **safeguard it provides in alerting you** in advance if any resources consuming credits are left behind, is invaluable.
+>
+>To set it back up, simply **repeat Steps 3 through 8** of this lab — create the SNS topic, confirm your email subscription, and recreate the budget. This time, **leave it in place** rather than deleting it at the end, so it keeps watching your account for the rest of the program.
 
 ---
 
