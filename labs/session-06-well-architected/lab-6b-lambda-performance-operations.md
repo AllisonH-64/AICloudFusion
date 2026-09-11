@@ -71,7 +71,7 @@ In this lab, you will save several values as variables so commands are easier to
 | `<YOUR_PROFILE_NAME>` | Your AWS CLI profile name from Lab 1A | `AdministratorAccess-123456789012` |
 | `<YOUR_ACCOUNT_ID>` | Your 12-digit AWS account number | `123456789012` |
 | `<YOUR_EMAIL>` | An email address you can check during this lab | `jane@example.com` |
-| `<TOPIC_ARN>` | The SNS topic ARN (from Step 9) | `arn:aws:sns:us-east-1:123456789012:workshop-waf-alerts` |
+| `<TOPIC_ARN>` | The SNS topic ARN (from Step 10a) | `arn:aws:sns:us-east-1:123456789012:workshop-waf-alerts` |
 
 ---
 
@@ -297,7 +297,10 @@ aws lambda invoke --function-name workshop-waf-workload --payload file://workloa
 
 **macOS / Linux:**
 ```bash
-aws lambda invoke --function-name workshop-waf-workload --payload file://workload-payload.json --cli-binary-format raw-in-base64-out --region us-east-1 response.json; echo "=== RESULT (128 MB Memory) ==="cat response.json
+aws lambda invoke --function-name workshop-waf-workload --payload file://workload-payload.json --cli-binary-format raw-in-base64-out --region us-east-1 response.json
+
+echo "=== RESULT (128 MB Memory) ==="
+cat response.json
 ```
 
 **✅ You should see something like:**
@@ -353,7 +356,10 @@ aws lambda invoke --function-name workshop-waf-workload --payload file://workloa
 
 **macOS / Linux:**
 ```bash
-aws lambda invoke --function-name workshop-waf-workload --payload file://workload-payload.json --cli-binary-format raw-in-base64-out --region us-east-1 response.json; echo "=== RESULT (256 MB Memory) ===" cat response.json
+aws lambda invoke --function-name workshop-waf-workload --payload file://workload-payload.json --cli-binary-format raw-in-base64-out --region us-east-1 response.json
+
+echo "=== RESULT (256 MB Memory) ==="
+cat response.json
 ```
 
 **✅ You should see something like:**
@@ -418,7 +424,10 @@ aws lambda invoke --function-name workshop-waf-workload --payload file://crash-p
 
 **macOS / Linux:**
 ```bash
-aws lambda invoke --function-name workshop-waf-workload --payload file://crash-payload.json --cli-binary-format raw-in-base64-out --region us-east-1 crash-response.json; echo "=== CRASH RESULT ===" cat crash-response.json
+aws lambda invoke --function-name workshop-waf-workload --payload file://crash-payload.json --cli-binary-format raw-in-base64-out --region us-east-1 crash-response.json
+
+echo "=== CRASH RESULT ==="
+cat crash-response.json
 ```
 
 **✅ You should see:**
@@ -630,22 +639,16 @@ aws cloudwatch delete-alarms --alarm-names workshop-lambda-errors --region us-ea
 
 ### Step 2: Unsubscribe and Delete the SNS Topic
 
-Check for active subscriptions:
+List subscriptions for the workshop topic, **replacing `<TOPIC_ARN>`**:
 
 ```
-aws sns list-subscriptions --region us-east-1
+aws sns list-subscriptions-by-topic --topic-arn <TOPIC_ARN> --region us-east-1
 ```
 
-Unsubscribe from the topic linked to the current workshop:
+Find your email subscription ARN in the output, then unsubscribe it:
 
 ```
 aws sns unsubscribe --subscription-arn <SUBSCRIPTION_ARN> --region us-east-1
-```
-
-Command to list topics:
-
-```
-aws sns list-topics --region us-east-1
 ```
 
 📋 Copy and paste, **replacing `<TOPIC_ARN>`**:
@@ -664,7 +667,7 @@ aws sns delete-topic --topic-arn <TOPIC_ARN> --region us-east-1
 aws lambda delete-function --function-name workshop-waf-workload --region us-east-1
 ```
 
-**✅ JSON output with "StatusCode": 204 means success.**
+**✅ No output means success.**
 
 ### Step 4: Delete the CloudWatch log group
 
